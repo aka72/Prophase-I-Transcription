@@ -1,0 +1,197 @@
+## Align with Star
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn D_R1.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix D_R1_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_D_R1  --outSAMtype BAM SortedByCoordinate  
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn D_R2.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix D_R2_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_D_R2  --outSAMtype BAM SortedByCoordinate
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn D_R3.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix D_R3_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_D_R3  --outSAMtype BAM SortedByCoordinate
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn P_R1.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix P_R1_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_P_R1  --outSAMtype BAM SortedByCoordinate
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn P_R2.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix P_R2_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_P_R2  --outSAMtype BAM SortedByCoordinate
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn P_R3.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix P_R3_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_P_R3  --outSAMtype BAM SortedByCoordinate
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn LZ_R1.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix LZ_R1_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_LZ_R1  --outSAMtype BAM SortedByCoordinate
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn LZ_R2.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix LZ_R2_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_LZ_R2  --outSAMtype BAM SortedByCoordinate
+
+STAR  --genomeDir /local/storage/data/short_read_index/mm10/STAR-rRNA --runThreadN 30 --readFilesIn LZ_R3.fastq.gz \
+--readFilesCommand zcat --outFileNamePrefix LZ_R3_ --outFilterMultimapNmax 1 \
+--outReadsUnmapped unmapped_LZ_R3  --outSAMtype BAM SortedByCoordinate
+
+______________________________________________________________________________________________________________________
+
+## .bam to BedGraph
+
+bedtools genomecov -ibam LZ_R1_Aligned.sortedByCoord.out.bam -bga -split -strand + > LZ_R1_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam LZ_R1_Aligned.sortedByCoord.out.bam -bga -split -strand - > LZ_R1_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam LZ_R2_Aligned.sortedByCoord.out.bam -bga -split -strand + > LZ_R2_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam LZ_R2_Aligned.sortedByCoord.out.bam -bga -split -strand - > LZ_R2_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam LZ_R3_Aligned.sortedByCoord.out.bam -bga -split -strand + > LZ_R3_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam LZ_R3_Aligned.sortedByCoord.out.bam -bga -split -strand - > LZ_R3_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam P_R1_Aligned.sortedByCoord.out.bam -bga -split -strand + > P_R1_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam P_R1_Aligned.sortedByCoord.out.bam -bga -split -strand - > P_R1_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam P_R2_Aligned.sortedByCoord.out.bam -bga -split -strand + > P_R2_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam P_R2_Aligned.sortedByCoord.out.bam -bga -split -strand - > P_R2_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam P_R3_Aligned.sortedByCoord.out.bam -bga -split -strand + > P_R3_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam P_R3_Aligned.sortedByCoord.out.bam -bga -split -strand - > P_R3_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam D_R1_Aligned.sortedByCoord.out.bam -bga -split -strand + > D_R1_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam D_R1_Aligned.sortedByCoord.out.bam -bga -split -strand - > D_R1_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam D_R2_Aligned.sortedByCoord.out.bam -bga -split -strand + > D_R2_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam D_R2_Aligned.sortedByCoord.out.bam -bga -split -strand - > D_R2_filtered.sorted.minus.bdg
+
+bedtools genomecov -ibam D_R3_Aligned.sortedByCoord.out.bam -bga -split -strand + > D_R3_filtered.sorted.plus.bdg
+
+bedtools genomecov -ibam D_R3_Aligned.sortedByCoord.out.bam -bga -split -strand - > D_R3_filtered.sorted.minus.bdg
+
+________________________________________________________________________________________________________________
+
+## Collate
+
+LC_COLLATE=C sort -k1,1 -k2,2n LZ_R1_filtered.sorted.plus.bdg > LZ_R1_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n LZ_R1_filtered.sorted.minus.bdg > LZ_R1_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n LZ_R2_filtered.sorted.plus.bdg > LZ_R2_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n LZ_R2_filtered.sorted.minus.bdg > LZ_R2_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n LZ_R3_filtered.sorted.plus.bdg > LZ_R3_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n LZ_R3_filtered.sorted.minus.bdg > LZ_R3_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n P_R1_filtered.sorted.plus.bdg > P_R1_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n P_R1_filtered.sorted.minus.bdg > P_R1_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n P_R2_filtered.sorted.plus.bdg > P_R2_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n P_R2_filtered.sorted.minus.bdg > P_R2_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n P_R3_filtered.sorted.plus.bdg > P_R3_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n P_R3_filtered.sorted.minus.bdg > P_R3_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n D_R1_filtered.sorted.plus.bdg > D_R1_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n D_R1_filtered.sorted.minus.bdg > D_R1_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n D_R2_filtered.sorted.plus.bdg > D_R2_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n D_R2_filtered.sorted.minus.bdg > D_R2_filtered.sorted2.minus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n D_R3_filtered.sorted.plus.bdg > D_R3_filtered.sorted2.plus.bdg
+
+LC_COLLATE=C sort -k1,1 -k2,2n D_R3_filtered.sorted.minus.bdg > D_R3_filtered.sorted2.minus.bdg
+
+_____________________________________________________________________________________________________
+
+## Remove rRNA and ChrM
+
+cat LZ_R1_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > LZ_R1_filtered.sorted2.nr.plus.bdg
+
+cat LZ_R1_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > LZ_R1_filtered.sorted2.nr.minus.bdg
+
+cat LZ_R2_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > LZ_R2_filtered.sorted2.nr.plus.bdg
+
+cat LZ_R2_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > LZ_R2_filtered.sorted2.nr.minus.bdg
+
+cat LZ_R3_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > LZ_R3_filtered.sorted2.nr.plus.bdg
+
+cat LZ_R3_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > LZ_R3_filtered.sorted2.nr.minus.bdg
+
+cat P_R1_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > P_R1_filtered.sorted2.nr.plus.bdg
+
+cat P_R1_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > P_R1_filtered.sorted2.nr.minus.bdg
+
+cat P_R2_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > P_R2_filtered.sorted2.nr.plus.bdg
+
+cat P_R2_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > P_R2_filtered.sorted2.nr.minus.bdg
+
+cat P_R3_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > P_R3_filtered.sorted2.nr.plus.bdg
+
+cat P_R3_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > P_R3_filtered.sorted2.nr.minus.bdg
+
+cat D_R1_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > D_R1_filtered.sorted2.nr.plus.bdg
+
+cat D_R1_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > D_R1_filtered.sorted2.nr.minus.bdg
+
+cat D_R2_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > D_R2_filtered.sorted2.nr.plus.bdg
+
+cat D_R2_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > D_R2_filtered.sorted2.nr.minus.bdg
+
+cat D_R3_filtered.sorted2.plus.bdg | grep "rRNA\|chrM" -v > D_R3_filtered.sorted2.nr.plus.bdg
+
+cat D_R3_filtered.sorted2.minus.bdg | grep "rRNA\|chrM" -v > D_R3_filtered.sorted2.nr.minus.bdg
+
+__________________________________________________________________________________________________
+
+## BedGraph to BigWig- plus.bdg renamed to minus.bw and vice versa because of nature of RT reaction
+
+bedGraphToBigWig LZ_R1_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes LZ_R1_minus1.bw
+
+bedGraphToBigWig LZ_R1_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes LZ_R1_plus1.bw
+
+bedGraphToBigWig LZ_R2_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes LZ_R2_minus1.bw
+
+bedGraphToBigWig LZ_R2_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes LZ_R2_plus1.bw
+
+bedGraphToBigWig LZ_R3_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes LZ_R3_minus1.bw
+
+bedGraphToBigWig LZ_R3_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes LZ_R3_plus1.bw
+
+bedGraphToBigWig P_R1_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes P_R1_minus1.bw
+
+bedGraphToBigWig P_R1_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes P_R1_plus1.bw
+
+bedGraphToBigWig P_R2_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes P_R2_minus1.bw
+
+bedGraphToBigWig P_R2_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes P_R2_plus1.bw
+
+bedGraphToBigWig P_R3_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes P_R3_minus1.bw
+
+bedGraphToBigWig P_R3_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes P_R3_plus1.bw
+
+bedGraphToBigWig D_R1_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes D_R1_minus1.bw
+
+bedGraphToBigWig D_R1_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes D_R1_plus1.bw
+
+bedGraphToBigWig D_R2_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes D_R2_minus1.bw
+
+bedGraphToBigWig D_R2_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes D_R2_plus1.bw
+
+bedGraphToBigWig D_R3_filtered.sorted2.nr.plus.bdg mm10.chromInfo.sizes D_R3_minus1.bw
+
+bedGraphToBigWig D_R3_filtered.sorted2.nr.minus.bdg mm10.chromInfo.sizes D_R3_plus1.bw
