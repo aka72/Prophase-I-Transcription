@@ -1,0 +1,46 @@
+##Directory: /local/storage/projects/prophaseI/Limmaradnormalized/proseqvsrnaseq
+##Date: 08/17/93
+
+---
+title: "RNAseq_analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Get counts from bam files using Salmon https://github.com/Sethupathy-Lab/RNAseq_pipeline
+wget http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M6/gencode.vM6.transcripts.fa.gz #not needed
+
+conda install refgenie
+
+export REFGENIE='genome_config.yaml'
+/home/aka72/miniconda3/bin/refgenie init -c $REFGENIE
+
+/home/aka72/miniconda3/bin/refgenie listr
+
+/home/aka72/miniconda3/bin/refgenie pull mm10/salmon_sa_index
+
+/home/aka72/miniconda3/bin/refgenie seek mm10/salmon_sa_index
+
+##Index for salmon
+/home/aka72/alias/mm10/salmon_sa_index/default/.
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r D_R1.fastq --validateMappings -o ./DR1transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r D_R2.fastq --validateMappings -o ./DR2transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r D_R3.fastq --validateMappings -o ./DR3transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r LZ_R1.fastq --validateMappings -o ./LZR1transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r LZ_R2.fastq --validateMappings -o ./LZR2transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r LZ_R3.fastq --validateMappings -o ./LZR3transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r P_R1.fastq --validateMappings -o ./PR1transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r P_R2.fastq --validateMappings -o ./PR2transcripts_quant
+
+/home/aka72/miniconda3/bin/salmon quant -i /home/aka72/alias/mm10/salmon_sa_index/default/. -l U -p 8 -r P_R3.fastq --validateMappings -o ./PR3transcripts_quant
