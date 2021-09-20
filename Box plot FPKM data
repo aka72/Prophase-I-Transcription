@@ -1,0 +1,171 @@
+Directory: /local/storage/projects/prophaseI/Limmaradnormalized
+Date: 08/28/21
+Purpose: plot FPKM of meiotic gene, spermiogenic gene, and x and y genes
+
+#SYCP3
+library(DESeq2)
+library(tibble)
+library(ggplot2)
+Sycp3_counts <- counts(dds['Sycp3',], normalized = TRUE)
+m <- list(counts = as.numeric(Sycp3_counts), group = as.factor(condition))
+m <- as.tibble(m)
+
+##Didn't use graph, plotted in prism
+q <- ggplot(m, aes(group, counts)) + geom_boxplot() + geom_jitter(width = 0.1)
+q <- q + labs(x = "Experimental Group", y = "Normalized Counts ", title = "Normalized Expression of Sycp3")
+q <- q + scale_x_discrete(labels=c("00hn" = "PMN, 0hrs", "06hn" = "PMN, 6hrs",
+                                   "06hy" = "PMN+Hp, 6hrs", "24hn" = "PMN, 24hrs", "24hy" = "PMN+Hp, 24hrs"))
+q
+
+pdf("SYCP3boxplot.pdf")
+q
+dev.off()
+
+##Sycp3
+13 0.000120   body_D  
+14 0.0000924  body_D  
+15 0.0000869  body_D  
+16 0.0000671  body_D  
+17 0.0000365  body_LZ 
+18 0.0000162  body_LZ 
+19 0.0000436  body_LZ 
+20 0.0000375  body_LZ 
+21 0.000194   body_P  
+22 0.000227   body_P  
+23 0.000193   body_P  
+24 0.000178   body_P 
+
+##Zfy1
+Zfy1_counts <- counts(dds['Zfy1',], normalized = TRUE)
+m <- list(counts = as.numeric(Zfy1_counts), group = as.factor(condition))
+m <- as.tibble(m)
+print(as_tibble(m), n=36)
+
+##Zfy1
+13 0.00000523  body_D  
+14 0.00000535  body_D  
+15 0.00000374  body_D  
+16 0.00000216  body_D  
+17 0.00000535  body_LZ 
+18 0.00000723  body_LZ 
+19 0.00000976  body_LZ 
+20 0.0000116   body_LZ 
+21 0.0000167   body_P  
+22 0.00000825  body_P  
+23 0.00000981  body_P  
+24 0.0000153   body_P 
+
+##Zfy2
+Zfy2_counts <- counts(dds['Zfy2',], normalized = TRUE)
+m <- list(counts = as.numeric(Zfy2_counts), group = as.factor(condition))
+m <- as.tibble(m)
+print(as_tibble(m), n=36)
+
+##Zfy2
+13 0.00000732  body_D  
+14 0.00000924  body_D  
+15 0.0000112   body_D  
+16 0.00000754  body_D  
+17 0.0000198   body_LZ 
+18 0.0000217   body_LZ 
+19 0.0000305   body_LZ 
+20 0.0000274   body_LZ 
+21 0.0000482   body_P  
+22 0.0000207   body_P  
+23 0.0000249   body_P  
+24 0.0000283   body_P
+
+##Slx
+Slx_counts <- counts(dds['Slx',], normalized = TRUE)
+m <- list(counts = as.numeric(Slx_counts), group = as.factor(condition))
+m <- as.tibble(m)
+print(as_tibble(m), n=36)
+
+13 0            body_D  
+14 0.000000402  body_D  
+15 0.0000000681 body_D  
+16 0.000000269  body_D  
+17 0.00000252   body_LZ 
+18 0.00000133   body_LZ 
+19 0.00000205   body_LZ 
+20 0.000000834  body_LZ 
+21 0.00000216   body_P  
+22 0.00000146   body_P  
+23 0.00000123   body_P  
+24 0.000000845  body_P
+
+##Asmt
+Asmt_counts <- counts(dds['Asmt',], normalized = TRUE)
+m <- list(counts = as.numeric(Asmt_counts), group = as.factor(condition))
+m <- as.tibble(m)
+print(as_tibble(m), n=36)
+
+13 0.00000164  body_D  
+14 0.00000294  body_D  
+15 0.00000265  body_D  
+16 0.000000808 body_D  
+17 0.00000724  body_LZ 
+18 0.00000447  body_LZ 
+19 0.00000474  body_LZ 
+20 0.00000292  body_LZ 
+21 0.0000102   body_P  
+22 0.00000340  body_P  
+23 0.00000701  body_P  
+24 0.0000114   body_P 
+
+##Brdt
+Brdt_counts <- counts(dds['Brdt',], normalized = TRUE)
+m <- list(counts = as.numeric(Brdt_counts), group = as.factor(condition))
+m <- as.tibble(m)
+print(as_tibble(m), n=36)
+
+13 0.000320   body_D  
+14 0.000317   body_D  
+15 0.000279   body_D  
+16 0.000220   body_D  
+17 0.0000497  body_LZ 
+18 0.0000496  body_LZ 
+19 0.0000790  body_LZ 
+20 0.0000808  body_LZ 
+21 0.000481   body_P  
+22 0.000699   body_P  
+23 0.000581   body_P  
+24 0.000468   body_P
+
+##Adam2
+Adam2_counts <- counts(dds['Adam2',], normalized = TRUE)
+m <- list(counts = as.numeric(Adam2_counts), group = as.factor(condition))
+m <- as.tibble(m)
+print(as_tibble(m), n=36)
+
+13 0.000582    body_D  
+14 0.000522    body_D  
+15 0.000517    body_D  
+16 0.000359    body_D  
+17 0.0000195   body_LZ 
+18 0.0000136   body_LZ 
+19 0.0000324   body_LZ 
+20 0.0000297   body_LZ 
+21 0.000619    body_P  
+22 0.00113     body_P  
+23 0.000895    body_P  
+24 0.000518    body_P 
+
+###Zfp281
+Zfp281_counts <- counts(dds['Zfp281',], normalized = TRUE)
+m <- list(counts = as.numeric(Zfp281_counts), group = as.factor(condition))
+m <- as.tibble(m)
+print(as_tibble(m), n=36)
+
+13 0.0000193   body_D  
+14 0.0000163   body_D  
+15 0.0000189   body_D  
+16 0.0000401   body_D  
+17 0.00000724  body_LZ 
+18 0.00000643  body_LZ 
+19 0.0000120   body_LZ 
+20 0.0000104   body_LZ 
+21 0.0000437   body_P  
+22 0.0000408   body_P  
+23 0.0000550   body_P  
+24 0.0000633   body_P 
