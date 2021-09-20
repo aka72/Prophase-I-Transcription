@@ -1,0 +1,66 @@
+Directory: /local/storage/projects/prophaseI/data/atacseq_genrich/DESeq2
+Date: 08/15/21
+
+
+#get TSSs
+genes <- read.table("final_tus.txt", header = TRUE, sep = "", dec = ".")
+tss <- as.data.frame.matrix(genes[])
+
+#make the chromEnd into chromStart +1 for genes on the plus strand
+tss[tss[,6]=="+",3] <- tss[tss[,6]=="+",2]+1
+
+#makes the chromEnd into chromStart +1 for genes on the minus strand
+tss[tss[,6] == "-",2] <- tss[tss[,6]=="-",3]-1
+
+#Only need first six columns
+tss_use <- tss[,1:6]
+
+write.table(tss_use, "tus.bed", sep="\t", dec = ".", row.names = FALSE, col.names = FALSE)
+write.csv(as.data.frame(tss_use),file="tus.bed")
+
+#Files to use
+DeSEQ2_ATAC_D_P.bed
+DeSEQ2_ATAC_P_LZ.bed
+Sperm_tus.bed
+
+#Sort
+sort -k1,1 -k2,2n Sperm_tus.bed > Sperm_tus.sorted.bed
+
+##Get files working in the right format ##head=down, tail=up regulated
+#D_P head
+cat DeSEQ2_ATAC_D_P.bed | sed -n 1,200p > DeSEQ2_ATAC_D_P.head200.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_D_P.head200.bed > DeSEQ2_ATAC_D_P.sorted.head200.bed
+cat DeSEQ2_ATAC_D_P.sorted.head200.bed | sed s/\"//g | sed s/,/"\t"/g | tail -n +2 > DeSEQ2_ATAC_D_P.sorted.head200.use.bed
+awk 'BEGIN{OFS="\t"};{print $1}' DeSEQ2_ATAC_D_P.sorted.head200.use.bed > DeSEQ2_ATAC_D_P.sorted.head200.use2.bed
+cat DeSEQ2_ATAC_D_P.sorted.head200.use2.bed | sed s/:/"\t"/g | sed s/-/"\t"/g | tail -n +2 > DeSEQ2_ATAC_D_P.sorted.head200.use3.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_D_P.sorted.head200.use3.bed > DeSEQ2_ATAC_D_P.sorted2.head200.use3.bed
+
+#D_P tail
+cat DeSEQ2_ATAC_D_P.bed | sed -n 12640,12840p > DeSEQ2_ATAC_D_P.tail200.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_D_P.tail200.bed > DeSEQ2_ATAC_D_P.sorted.tail200.bed
+cat DeSEQ2_ATAC_D_P.sorted.tail200.bed | sed s/\"//g | sed s/,/"\t"/g | tail -n +2 > DeSEQ2_ATAC_D_P.sorted.tail200.use.bed
+awk 'BEGIN{OFS="\t"};{print $1}' DeSEQ2_ATAC_D_P.sorted.tail200.use.bed > DeSEQ2_ATAC_D_P.sorted.tail200.use2.bed
+cat DeSEQ2_ATAC_D_P.sorted.tail200.use2.bed | sed s/:/"\t"/g | sed s/-/"\t"/g | tail -n +2 > DeSEQ2_ATAC_D_P.sorted.tail200.use3.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_D_P.sorted.tail200.use3.bed > DeSEQ2_ATAC_D_P.sorted2.tail200.use3.bed
+
+#P_LZ head
+cat DeSEQ2_ATAC_P_LZ.bed | sed -n 1,200p > DeSEQ2_ATAC_P_LZ.head200.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_P_LZ.head200.bed > DeSEQ2_ATAC_P_LZ.sorted.head200.bed
+cat DeSEQ2_ATAC_P_LZ.sorted.head200.bed | sed s/\"//g | sed s/,/"\t"/g | tail -n +2 > DeSEQ2_ATAC_P_LZ.sorted.head200.use.bed
+awk 'BEGIN{OFS="\t"};{print $1}' DeSEQ2_ATAC_P_LZ.sorted.head200.use.bed > DeSEQ2_ATAC_P_LZ.sorted.head200.use2.bed
+cat DeSEQ2_ATAC_P_LZ.sorted.head200.use2.bed | sed s/:/"\t"/g | sed s/-/"\t"/g | tail -n +2 > DeSEQ2_ATAC_P_LZ.sorted.head200.use3.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_P_LZ.sorted.head200.use3.bed > DeSEQ2_ATAC_P_LZ.sorted2.head200.use3.bed
+
+#P_LZ tail
+cat DeSEQ2_ATAC_P_LZ.bed | sed -n 19813,20013p > DeSEQ2_ATAC_P_LZ.tail200.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_P_LZ.tail200.bed > DeSEQ2_ATAC_P_LZ.sorted.tail200.bed
+cat DeSEQ2_ATAC_P_LZ.sorted.tail200.bed | sed s/\"//g | sed s/,/"\t"/g | tail -n +2 > DeSEQ2_ATAC_P_LZ.sorted.tail200.use.bed
+awk 'BEGIN{OFS="\t"};{print $1}' DeSEQ2_ATAC_P_LZ.sorted.tail200.use.bed > DeSEQ2_ATAC_P_LZ.sorted.tail200.use2.bed
+cat DeSEQ2_ATAC_P_LZ.sorted.tail200.use2.bed | sed s/:/"\t"/g | sed s/-/"\t"/g | tail -n +2 > DeSEQ2_ATAC_P_LZ.sorted.tail200.use3.bed
+sort -k1,1 -k2,2n DeSEQ2_ATAC_P_LZ.sorted.tail200.use3.bed > DeSEQ2_ATAC_P_LZ.sorted2.tail200.use3.bed
+
+#Bedtools closest
+bedtools closest -a DeSEQ2_ATAC_D_P.sorted2.head200.use3.bed -b Sperm_tus.sorted.bed > closest.spermtus.DeSEQ2_ATAC_D_P.sorted2.head200.use3.bed
+bedtools closest -a DeSEQ2_ATAC_D_P.sorted2.tail200.use3.bed -b Sperm_tus.sorted.bed > closest.spermtus.DeSEQ2_ATAC_D_P.sorted2.tail200.use3.bed
+bedtools closest -a DeSEQ2_ATAC_P_LZ.sorted2.head200.use3.bed -b Sperm_tus.sorted.bed > closest.spermtus.DeSEQ2_ATAC_P_LZ.sorted2.head200.use3.bed
+bedtools closest -a DeSEQ2_ATAC_P_LZ.sorted2.tail200.use3.bed -b Sperm_tus.sorted.bed > closest.spermtus.DeSEQ2_ATAC_P_LZ.sorted2.tail200.use3.bed
