@@ -1,0 +1,602 @@
+---
+##Directory: /local/storage/projects/prophaseI/Limmaradnormalized 
+title: "PROseq_analysis_new" Adriana 2021
+output: html_document
+---
+
+```{r setup, include=FALSE}   ##R code chunks
+knitr::opts_chunk$set(echo = TRUE)
+```
+#library(magrittr), need R 3.4.2
+## 1. getCounts from bw files
+```{r, eval=F}
+## 1. getCounts from bw files
+rm(list = ls())
+tus <- read.table("/local/storage/projects/prophaseI/Limmaradnormalized/final_tus.txt", header=TRUE)
+tus <- tus[(tus$TXEND-tus$TXSTART) > 500, ] 
+
+## filter away genes with polyA region overlapping with other genes
+# tus <- tus[, c("TXCHROM", "TXSTART", "TXEND", "GENEID", "TXSTRAND")]
+tus1 <- tus
+tus1$TXEND[tus1$TXSTRAND == "+"] <- tus1$TXEND[tus1$TXSTRAND == "+"] + 5000
+tus1$TXSTART[tus1$TXSTRAND == "-"] <- tus1$TXSTART[tus1$TXSTRAND == "-"] - 5000
+library(magrittr)
+chr <- unique(tus$TXCHROM)%>%as.character() #need magrittr for this function
+
+gene.filter1 <- lapply(1:length(chr), function(i){
+  gene.filter <- c()
+  data <- tus1[tus1$TXCHROM == chr[i], ]
+  for (x in 1:nrow(data)) {
+    gene <- data[x, ]
+    gene.data <- data[data$TXSTRAND == gene$TXSTRAND, ]
+    gene.data <- gene.data[(gene.data$TXSTART < gene$TXSTART & gene.data$TXEND > gene$TXSTART) | (gene.data$TXSTART < gene$TXEND & gene.data$TXEND > gene$TXEND), ]
+      if(nrow(gene.data) > 0)
+    gene.filter <- c(gene.filter, as.character(gene$GENEID))
+  }
+  gene.filter
+}) %>% unlist %>% unique   ## delete 9891 genes, can delete cleanly
+
+tus <- tus[!tus$GENEID %in% gene.filter1, ]
+
+## region selection ##pol2=pause
+pol2 <- tus
+pol2$TXEND[pol2$TXSTRAND == "+"] <- tus$TXSTART[tus$TXSTRAND == "+"]+250
+pol2$TXSTART[pol2$TXSTRAND == "-"] <- tus$TXEND[tus$TXSTRAND == "-"]-250
+
+bodies <- tus
+bodies$TXSTART[bodies$TXSTRAND == "+"] <- bodies$TXSTART[bodies$TXSTRAND ==  "+"]+250
+bodies$TXEND[bodies$TXSTRAND == "-"] <- bodies$TXEND[bodies$TXSTRAND == "-"]-250
+
+polyA <- tus
+polyA$TXSTART[polyA$TXSTRAND == "+"] <- tus$TXEND[ tus$TXSTRAND == "+"]
+polyA$TXEND[polyA$TXSTRAND == "+"] <- tus$TXEND[tus$TXSTRAND == "+"] + 5000
+polyA$TXSTART[polyA$TXSTRAND == "-"] <- tus$TXSTART[tus$TXSTRAND == "-"] - 5000
+polyA$TXEND[polyA$TXSTRAND == "-"] <- tus$TXSTART[tus$TXSTRAND == "-"]
+polyA$TXSTART[polyA$TXSTART < 0] <- 0
+#-----------------------------------------------------------------------------
+library(bigWig) ##r.3.4.2, used raw (unnormalized) BW files
+countBigWig <- function(prefix, bed, rpkm=FALSE, path="./") {
+ pl <- load.bigWig(paste(path, prefix, "_plus.bw", sep=""))
+ mn <- load.bigWig(paste(path, prefix, "_minus.bw", sep=""))
+
+ counts <- bed6.region.bpQuery.bigWig(pl, mn, bed, abs.value = TRUE)
+        if(rpkm==TRUE) {
+                counts <- counts * (1000/(bed[,3]-bed[,2])) * (1e6/(abs(pl$mean)*pl$basesCovered+abs(mn$mean)*mn$basesCovered))
+        }
+ return(counts)
+}
+
+getBigWigSize <- function(prefix, path="./") {
+ pl <- load.bigWig(paste(path, prefix, "_plus.bw", sep=""))
+ mn <- load.bigWig(paste(path, prefix, "_minus.bw", sep=""))
+
+ abs(pl$mean)*pl$basesCovered+abs(mn$mean)*mn$basesCovered ## Number of reads that map uniquely.
+}
+
+fn <- list.files("./", pattern = "s.bw")
+sample <- paste0(c(rep("D", 4), rep("LZ", 4), rep("P", 4)),
+                 c("_R1", "_R2", "_R3", "_R4"))
+bodyCounts <- NULL
+pol2Counts <- NULL
+polyACounts <- NULL
+sampleSize <- NULL
+for(f in sample) {
+  sampleSize <- c(sampleSize, getBigWigSize(f, path="./"))
+	bodyCounts <- cbind(bodyCounts, countBigWig(f, bodies, rpkm=FALSE, 
+	                                            path = "./"))
+  pol2Counts <- cbind(pol2Counts, countBigWig(f, pol2, rpkm=FALSE, 
+                                              path = "./"))
+	polyACounts <- cbind(polyACounts, countBigWig(f, polyA, rpkm=FALSE, 
+	                                              path = "./")) 
+}
+colnames(bodyCounts) <- sample
+colnames(pol2Counts) <- sample
+colnames(polyACounts) <- sample
+rownames(bodyCounts) <- bodies$GENEID
+rownames(pol2Counts) <- pol2$GENEID
+rownames(polyACounts) <- polyA$GENEID
+names(sampleSize) <- sample
+# identical(bodies$GENEID, pol2$GENEID)
+save(bodyCounts, pol2Counts, polyACounts, sampleSize, file = "./bw.counts.RData")
+```
+
+```{r}
+#################################################################
+## PROseq DE analysis ##current R
+## 2. DEseq2
+rm(list = ls())
+library(DESeq2)
+load("./bw.counts.RData")
+combine.dat <- cbind(pol2Counts,
+                     bodyCounts,
+                     polyACounts)
+colnames(combine.dat) <- c(paste0("pol2_", colnames(pol2Counts)),
+                           paste0("body_", colnames(bodyCounts)),
+                           paste0("polyA_", colnames(polyACounts)))
+
+condition <- do.call(rbind, strsplit(colnames(combine.dat), "_R"))[, 1]
+condition <- factor(condition)
+
+# group <- levels(condition)
+## condition1
+sample.info <- data.frame(condition = condition,
+                          row.names = colnames(combine.dat))
+dds <- DESeqDataSetFromMatrix(countData = combine.dat,
+                              colData = sample.info,
+                              design = ~ condition )
+#Size factors determined by bw library size/rad scaler;see excel file
+sizeFactors(dds) <- c(6697004,7470531,14690503,3711683,3176013,18807759,14145068,33563464,6470470,6181809,5708847,13023631,6697004,7470531,14690503,3711683,3176013,18807759,14145068,33563464,6470470,6181809,5708847,13023631,6697004,7470531,14690503,3711683,3176013,18807759,14145068,33563464,6470470,6181809,5708847,13023631)
+# dds <- DESeq(dds)
+dds <- DESeq(dds, fitType = "local")
+resultsNames(dds)
+
+counts.normalized <- counts(dds, normalized = T)
+save(dds, file = "./DESeq2.RData")
+save(counts.normalized, file = "./counts.normalized.RData")
+
+##################################################################
+
+rm(list = ls())
+## PROseq
+##load(file = "./DESeq2.RData")
+##load(file = "./counts.normalized.RData")
+## get DE genes under each condition
+body.P.LZ.rslt <- as.data.frame(results(dds, contrast=c("condition", "body_P", "body_LZ")))
+body.P.LZ <- results(dds, contrast=c("condition", "body_P", "body_LZ"))
+body.P.LZ.rslt$padj <- ifelse(is.na(body.P.LZ.rslt$padj), 1, body.P.LZ.rslt$padj)
+body.D.P.rslt <- as.data.frame(results(dds, contrast=c("condition", "body_D", "body_P")))
+body.D.P <- results(dds, contrast=c("condition", "body_D", "body_P"))
+body.D.P.rslt$padj <- ifelse(is.na(body.D.P.rslt$padj), 1, body.D.P.rslt$padj)
+pol2.P.LZ.rslt <- as.data.frame(results(dds, contrast=c("condition", "pol2_P", "pol2_LZ")))
+pol2.P.LZ <- results(dds, contrast=c("condition", "pol2_P", "pol2_LZ"))
+pol2.P.LZ.rslt$padj <- ifelse(is.na(pol2.P.LZ.rslt$padj), 1, pol2.P.LZ.rslt$padj)
+pol2.D.P.rslt <- as.data.frame(results(dds, contrast=c("condition", "pol2_D", "pol2_P")))
+pol2.D.P <-results(dds, contrast=c("condition", "pol2_D", "pol2_P"))
+pol2.D.P.rslt$padj <- ifelse(is.na(pol2.D.P.rslt$padj), 1, pol2.D.P.rslt$padj)
+polyA.P.LZ.rslt <- as.data.frame(results(dds, contrast=c("condition", "polyA_P", "polyA_LZ")))
+polyA.P.LZ <- results(dds, contrast=c("condition", "polyA_P", "polyA_LZ"))
+polyA.P.LZ.rslt$padj <- ifelse(is.na(polyA.P.LZ.rslt$padj), 1, polyA.P.LZ.rslt$padj)
+polyA.D.P.rslt <- as.data.frame(results(dds, contrast=c("condition", "polyA_D", "polyA_P")))
+polyA.D.P <- results(dds, contrast=c("condition", "polyA_D", "polyA_P"))
+polyA.D.P.rslt$padj <- ifelse(is.na(polyA.D.P.rslt$padj), 1, polyA.D.P.rslt$padj)
+
+##MA plots
+pdf("MA_bodies_P_LZ.pdf")
+plotMA(body.P.LZ, colNonSig = "gray67", colSig = "dark red")
+dev.off()
+
+pdf("MA_bodies_D_P.pdf")
+plotMA(body.D.P, colNonSig = "gray67", colSig = "dark red")
+dev.off()
+
+##Save files
+save(body.P.LZ.rslt, file = "./body.P.LZ.rslt.RData")
+save(body.D.P.rslt, file = "./body.D.P.rslt.RData")
+save(pol2.P.LZ.rslt, file = "./pol2.P.LZ.rslt.RData")
+save(pol2.D.P.rslt, file = "./pol2.D.P.rslt.RData")
+save(polyA.P.LZ.rslt, file = "./polyA.P.LZ.rslt.RData")
+save(polyA.D.P.rslt, file = "./polyA.D.P.rslt.RData")
+
+save(body.P.LZ, file = "./body.P.LZ.RData")
+save(body.D.P, file = "./body.D.P.RData")
+save(pol2.P.LZ, file = "./pol2.P.LZ.RData")
+save(pol2.D.P, file = "./pol2.D.P.RData")
+save(polyA.P.LZ, file = "./polyA.P.LZ.RData")
+save(polyA.D.P, file = "./polyA.D.P.RData")
+
+####Summary statistics
+#body.P.LZ
+out of 26951 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 6048, 22%
+LFC < 0 (down)     : 0, 0%
+outliers [1]       : 25, 0.093%
+low counts [2]     : 16134, 60%
+(mean count < 0)
+
+#body.D.P
+out of 26951 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 0, 0%
+LFC < 0 (down)     : 4200, 16%
+outliers [1]       : 25, 0.093%
+low counts [2]     : 0, 0%
+(mean count < 0)
+
+#pol2.P.LZ
+out of 26951 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 2845, 11%
+LFC < 0 (down)     : 0, 0%
+outliers [1]       : 25, 0.093%
+low counts [2]     : 17691, 66%
+(mean count < 0)
+
+#pol2.D.P
+out of 26951 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 3, 0.011%
+LFC < 0 (down)     : 6366, 24%
+outliers [1]       : 25, 0.093%
+low counts [2]     : 16654, 62%
+(mean count < 0)
+
+#polyA.P.LZ
+out of 26951 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 5956, 22%
+LFC < 0 (down)     : 0, 0%
+outliers [1]       : 25, 0.093%
+low counts [2]     : 14056, 52%
+(mean count < 0)
+
+#polyA.D.P
+out of 26951 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 1, 0.0037%
+LFC < 0 (down)     : 4610, 17%
+outliers [1]       : 25, 0.093%
+low counts [2]     : 18733, 70%
+(mean count < 0)
+
+
+#DEGenes
+body.P.LZ.DEgene <- rownames(body.P.LZ.rslt[body.P.LZ.rslt$padj < 0.05, ])
+body.D.P.DEgene <- rownames(body.D.P.rslt[body.D.P.rslt$padj < 0.05, ])
+pol2.P.LZ.DEgene <- rownames(pol2.P.LZ.rslt[pol2.P.LZ.rslt$padj < 0.05, ])
+pol2.D.P.DEgene <- rownames(pol2.D.P.rslt[pol2.D.P.rslt$padj < 0.05, ])
+polyA.P.LZ.DEgene <- rownames(polyA.P.LZ.rslt[polyA.P.LZ.rslt$padj < 0.05, ])
+polyA.D.P.DEgene <- rownames(polyA.D.P.rslt[polyA.D.P.rslt$padj < 0.05, ])
+
+DEgene <- unique(c(body.P.LZ.DEgene, body.D.P.DEgene, 
+                   pol2.P.LZ.DEgene, pol2.D.P.DEgene, 
+                   polyA.P.LZ.DEgene, polyA.D.P.DEgene))
+
+### PROseq.count normalize to LZ for heatmap
+counts.normalized <- counts.normalized + 1.489715e-08 ##min(counts.normalized[counts.normalized != min(counts.normalized)])/2
+counts.normalized <- counts.normalized[rownames(counts.normalized) %in% DEgene, ]
+counts.normalized <- counts.normalized[, c(5:8, 17:20, 29:32, 9:12,
+                                           21:24, 33:36, 1:4, 13:16, 25:28)]
+
+
+for(i in 1:nrow(counts.normalized)){
+  gene.pause.nor <- mean(counts.normalized[i, 1:4])
+  gene.body.nor <- mean(counts.normalized[i, 5:8])
+  gene.polyA.nor <- mean(counts.normalized[i, 9:12])
+  counts.normalized[i, c(1:4, 13:16, 25:28)] <- counts.normalized[i, c(1:4, 13:16, 25:28)]/gene.pause.nor
+  counts.normalized[i, c(5:8, 17:20, 29:32)] <- counts.normalized[i, c(5:8, 17:20, 29:32)]/gene.body.nor
+  counts.normalized[i, c(9:12, 21:24, 33:36)] <- counts.normalized[i, c(9:12, 21:24, 33:36)]/gene.polyA.nor
+}
+
+#FPKM for cluster analysis
+FPKM <- data.frame("GeneID" = rownames(counts.normalized), counts.normalized)
+write.table(FPKM, file = "./ForClust/data/FPKM.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+save(counts.normalized, file = "./counts.LZ.normalized.RData")
+cluster.script <- "/home/aka72/miniconda3/bin/clust ./ForClust/data -n 3 -r ./ForClust/replicate_infor.txt -t 1.0"
+###########################################################
+rm(list = ls())
+clust.result <- read.table("/local/storage/projects/prophaseI/Limmaradnormalized/Results_18_Aug_21/Clusters_Objects.tsv", 
+                           header = T, stringsAsFactors = F, sep = "\t")
+clust.result <- clust.result[-1, ]
+clust.num <- lapply(1:ncol(clust.result), function(i){
+  dat <- clust.result[, i]
+  dat <- dat[dat != ""]
+  length(dat)
+}) %>% unlist
+clust.gene <- as.character(as.matrix(clust.result))
+clust.gene <- clust.gene[-which(clust.gene == "")]
+
+clust.data <- read.table("/local/storage/projects/prophaseI/Limmaradnormalized/Results_18_Aug_21/Processed_Data/FPKM.txt_processed.tsv", 
+                           header = T, stringsAsFactors = F, sep = "\t", row.names = 1)
+clust.data <- clust.data[match(clust.gene, rownames(clust.data)), ]
+## figure
+library(pheatmap)
+annotation_col <- data.frame("Region" = as.factor(rep(c("Pause", "GeneBody", "PolyA"), 3)),
+                             "Phase" = as.factor(rep(c("L_Z", "P", "D"), each = 3)))
+rownames(annotation_col) <- colnames(clust.data)
+annotation_row = data.frame("GeneClass" = factor(rep(paste0("C", 0:1), clust.num))) ##number of clusters
+                                                  
+rownames(annotation_row) = rownames(clust.data)
+
+ann_colors = list(Phase = c(L_Z="#E69E00", P="#009C73", D="#CA78A6"),
+                  Region=c(Pause="#f4e1d2", GeneBody="#bdcebe", PolyA="#ada397"),
+                  GeneClass = c(C0="#C0C0C0", C1="#A0A0A0", C2="#787878", C3="#585858"))
+
+pheatmap(clust.data,
+         filename = "./clust.heatmap.pdf",
+         fontsize =10, 
+         # breaks = breaks,
+         show_rownames=F, annotation_row = annotation_row, 
+         annotation_col = annotation_col, annotation_colors = ann_colors,
+         color = colorRampPalette(c("#006A9C", "#FFFFFF", "#9E1617"))(100),
+         border_color = F,
+         annotation_names_col=F,show_colnames=F,
+         annotation_names_row=F,
+         cluster_cols =F,cluster_rows=F,fontsize_col=12,
+         # cellwidth = 4,cellheight=0.01,
+          width = 5, height = 5,
+         legend = T, annotation_legend = T, 
+         main = "Heatmap")
+
+#----------------------------------------------------------------
+## cluster results and GO
+rm(list = ls())
+clust.result <- read.table("~/35/Danko_lab/Adriana/rslt/ForClust/Results_07_Feb_19/Clusters_Objects.tsv", 
+                           header = T, stringsAsFactors = F, sep = "\t")
+clust.result <- clust.result[-1, ]
+expInfor <- matrix(paste0("cluster", 1:4), nrow = 4, ncol = 2, byrow = FALSE,
+                   dimnames = list(NULL, c("ID", "Description")))
+hitsTS <- lapply(1:ncol(clust.result), function(i){
+  gene <- clust.result[, i]
+  gene[gene != ""]
+})
+lapply(hitsTS, function(x) length(x))
+load(file = "~/35/Danko_lab/Adriana/rslt/PROseq/DESeq2.rslt")
+phenotypeTS <- lapply(1:4, function(x) {
+  gene <- rownames(counts.normalized)
+  phenotype <- rep(1, length(gene))
+  names(phenotype) <- gene
+  phenotype
+})
+
+library(HTSanalyzeR2)
+library(GO.db)
+library(org.Mm.eg.db)
+library(KEGG.db)
+
+PW_KEGG <- KeggGeneSets(species="Mm")
+GO_CC <- GOGeneSets(species="Mm",ontologies=c("CC"))
+GO_MF <- GOGeneSets(species="Mm",ontologies=c("MF"))
+GO_BP <- GOGeneSets(species="Mm",ontologies=c("BP"))
+ListGSC <- list(PW_KEGG=PW_KEGG, GO_CC=GO_CC,
+                GO_MF=GO_MF, GO_BP=GO_BP)
+
+gscaTS <- GSCABatch(expInfor = expInfor,
+              phenotypeTS = phenotypeTS, listOfGeneSetCollections = ListGSC,
+              hitsTS = hitsTS)
+system.time(gscaTS <- preprocessGscaTS(gscaTS, species="Mm", initialIDs="SYMBOL",
+                         keepMultipleMappings=TRUE, duplicateRemoverMethod="max",
+                         orderAbsValue=FALSE))   ## 30 seconds
+system.time(gscaTS <- analyzeGscaTS(gscaTS,  
+                                    para=list(pValueCutoff=0.05,
+                                    pAdjustMethod="BH", 
+                                    nPermutations=10000, 
+                                    minGeneSetSize=5, 
+                                    exponent=1), 
+                                    doGSOA = T, 
+                                    doGSEA = F)) 
+gscaTS <- appendGSTermsTS(gscaTS, keggGSCs ="PW_KEGG",
+                          goGSCs=c("GO_CC", "GO_MF", "GO_BP")) 
+save(gscaTS, file = "~/35/Danko_lab/Adriana/rslt/PROseq/clustGSCA.RData")
+reportAll(gscaTS)
+```
+
+
+## GSEA among polyA
+```{r}
+rm(list = ls())
+load(file = "~/35/Danko_lab/Adriana/rslt/PROseq/DESeq2.rslt")
+polyA.P.LZ.rslt <- as.data.frame(results(dds, contrast=c("condition", "polyA_P", "polyA_LZ")))
+polyA.P.LZ.rslt$padj <- ifelse(is.na(polyA.P.LZ.rslt$padj), 1, polyA.P.LZ.rslt$padj)
+polyA.D.P.rslt <- as.data.frame(results(dds, contrast=c("condition", "polyA_D", "polyA_P")))
+polyA.D.P.rslt$padj <- ifelse(is.na(polyA.D.P.rslt$padj), 1, polyA.D.P.rslt$padj)
+
+expInfor <- matrix(c("P-LZ", "D-P"), nrow = 2, ncol = 2, byrow = FALSE,
+                   dimnames = list(NULL, c("ID", "Description")))
+datalist <- list(polyA.P.LZ.rslt, polyA.D.P.rslt)
+phenotypeTS <- lapply(datalist, function(x) {
+  tmp <- as.vector(x$log2FoldChange)
+  names(tmp) <- rownames(x)
+  tmp
+})
+
+## Time series GSEA
+library(HTSanalyzeR2)
+library(GO.db)
+library(org.Mm.eg.db)
+library(KEGG.db)
+
+PW_KEGG <- KeggGeneSets(species="Mm")
+GO_CC <- GOGeneSets(species="Mm",ontologies=c("CC"))
+GO_MF <- GOGeneSets(species="Mm",ontologies=c("MF"))
+GO_BP <- GOGeneSets(species="Mm",ontologies=c("BP"))
+ListGSC <- list(PW_KEGG=PW_KEGG, GO_CC=GO_CC,
+                GO_MF=GO_MF, GO_BP=GO_BP)
+GSCABatch <- new("GSCABatch", expInfor = expInfor, phenotypeTS = phenotypeTS,
+                 listOfGeneSetCollections = ListGSC)
+system.time(gscaTS <- preprocessGscaTS(GSCABatch, species="Mm", initialIDs="SYMBOL",
+                         keepMultipleMappings=TRUE, duplicateRemoverMethod="max",
+                         orderAbsValue=FALSE))   ## 30 seconds
+doParallel::registerDoParallel(cores=100)
+system.time(gscaTS <- analyzeGscaTS(gscaTS,  
+                                    para=list(pValueCutoff=0.05,
+                                    pAdjustMethod="BH", 
+                                    nPermutations=10000, 
+                                    minGeneSetSize=15, 
+                                    exponent=1), 
+                                    doGSOA = F, 
+                                    doGSEA = TRUE)) 
+gscaTS <- appendGSTermsTS(gscaTS, keggGSCs ="PW_KEGG",
+                          goGSCs=c("GO_CC", "GO_MF", "GO_BP")) 
+save(gscaTS, file = "~/35/Danko_lab/Adriana/rslt/PROseq/polyA.gscaTS.RData")
+# reportAll(gscaTS)
+polyA.P.LZ.gsca <- gscaTS$`P-LZ`
+GO_MF_geneset <- c("GO:0008408", "GO:0008353", "GO:0003746", "GO:0003899",
+                   "GO:0003730", "GO:0003705", "GO:0008392")
+GO_CC_geneset <- c("GO:0005662", "GO:0000176", "GO:0000777", "GO:0001673",
+                   "GO:0042571")
+GO_BP_geneset <- c("GO:0007094", "GO:0000070", "GO:0000956", "GO:0006298",
+                   "GO:0045292", "GO:0007140", "GO:0007369", "GO:0007339",
+                   "GO:0048706", "GO:0030317", "GO:0001701", "GO:0007283",
+                   "GO:0007186")
+PW_KEGG_geneset <- c("mmu03430", "mmu03440")
+specificGeneset <- list("GO_MF"=GO_MF_geneset, "GO_CC"=GO_CC_geneset,
+                        "GO_BP"=GO_BP_geneset, "PW_KEGG"=PW_KEGG_geneset)
+report(polyA.P.LZ.gsca, specificGeneset = specificGeneset)
+
+###
+load(file = "~/35/Danko_lab/Adriana/rslt/PROseq/polyA.gscaTS.RData")
+GO_MF_geneset <- c("GO:0003899", "GO:0003730", "GO:0008392")
+PW_KEGG_geneset <- c("mmu03440")
+GO_BP_geneset <- c("GO:0006298", "GO:0007140", "GO:0007283", "GO:0007339",
+                   "GO:0030317", "GO:0001701", "GO:0007186")
+specificGeneset <- list("GO_MF"=GO_MF_geneset, 
+                        "GO_BP"=GO_BP_geneset, "PW_KEGG"=PW_KEGG_geneset)
+reportAll(gscaTS, specificGeneset = specificGeneset)
+```
+
+## scatter plot between RNAseq and PROseq (genebody) in each phase
+```{r}
+rm(list = ls())
+######################################################################
+## P Vs. LZ
+## PROseq
+# PROseq DE analysis ##current R
+# 2. DEseq2 on body counts without rad normalization
+rm(list = ls())
+library(DESeq2)
+load("../bw.counts.RData")
+combine.dat <- cbind(pol2Counts,
+                     bodyCounts,
+                     polyACounts)
+colnames(combine.dat) <- c(paste0("pol2_", colnames(pol2Counts)),
+                           paste0("body_", colnames(bodyCounts)),
+                           paste0("polyA_", colnames(polyACounts)))
+
+condition <- do.call(rbind, strsplit(colnames(combine.dat), "_R"))[, 1]
+condition <- factor(condition)
+
+# group <- levels(condition)
+## condition1
+sample.info <- data.frame(condition = condition,
+                          row.names = colnames(combine.dat))
+dds3 <- DESeqDataSetFromMatrix(countData = combine.dat,
+                              colData = sample.info,
+                              design = ~ condition )
+
+
+# dds <- DESeq(dds)
+dds3 <- DESeq(dds3, fitType = "local")
+resultsNames(dds2)
+
+
+save(dds2, file = "./dds2DESeq2.RData")
+
+library(DESeq2)
+
+body.P.LZ.rslt <- (results(dds2, contrast=c("condition", "body_P", "body_LZ")))
+body.P.LZ.rslt$padj <- ifelse(is.na(body.P.LZ.rslt$padj), 1, body.P.LZ.rslt$padj)
+
+## RNAseq
+load("~/35/Danko_lab/Adriana/rslt/RNAseq/LZ.P.DESeq.RData")
+LZ.P.DESeq <- resP_LZ
+LZ.P.DESeq$padj <- ifelse(is.na(LZ.P.DESeq$padj), 1, LZ.P.DESeq$padj)
+hits1 <- body.P.LZ.rslt[body.P.LZ.rslt$padj < 0.05, ] %>% rownames()
+hits2 <- LZ.P.DESeq[LZ.P.DESeq$padj < 0.05, ] %>% rownames()
+
+union.gene <- (union(hits1, hits2))
+union.gene <- intersect(intersect(rownames(body.P.LZ.rslt),
+                                  rownames(LZ.P.DESeq)),
+                        union.gene)
+RNAseq.DEgene <- LZ.P.DESeq[match(union.gene, rownames(LZ.P.DESeq)), ]
+PROseq.DEgene <- body.P.LZ.rslt[match(union.gene, rownames(body.P.LZ.rslt)), ]
+
+plot.dat <- data.frame("RNAseq" = RNAseq.DEgene$log2FoldChange, 
+                       "PROseq" = PROseq.DEgene$log2FoldChange)
+rownames(plot.dat) <- rownames(RNAseq.DEgene)
+
+# 
+lm_eqn <- function(df){
+    m <- lm(RNAseq ~ PROseq, df);
+    f <- summary(m)$fstatistic;
+    p <- pf(f[1],f[2],f[3],lower.tail=F);
+    attributes(p) <- NULL;
+    eq <- substitute(italic(r)^2~"="~r2*","~~italic(P)~p,
+         list(r2 = format(summary(m)$r.squared, digits = 3),
+           p = ifelse(p < 1e-10, "< 1e-10", format(p, digits = 3))
+           ))
+    as.character(as.expression(eq));
+}
+library(ggplot2)
+library(cowplot)
+library(easyGgplot2)
+library(RColorBrewer)
+df <- data.frame(RNAseq = plot.dat$RNAseq, PROseq = plot.dat$PROseq,
+                 d = densCols(plot.dat$RNAseq, plot.dat$PROseq, 
+                             colramp = colorRampPalette(rev(brewer.pal(11,'Spectral')))))
+pdf("./RNA.PRO.P.LZ2.pdf")
+    ggplot(df) +
+    geom_point(aes(RNAseq, PROseq, col = d), size = 2, alpha = 1) +
+    scale_color_identity() +
+    xlim(-8, 8) + ylim(-8, 8) + 
+    xlab("RNAseq log2FC") + 
+    ylab("PROseq log2FC") + 
+    ggtitle("P Vs. LZ") +
+    theme(plot.title = element_text(size = 17, face = "bold"),
+         axis.text=element_text(size=17),
+         axis.title=element_text(size=17,face="bold")) +
+  geom_text(x = -3, y = 5, label = lm_eqn(plot.dat), parse = TRUE,
+            size = 6) +
+   geom_abline(slope=1, intercept=0, size = 0.3, linetype="dashed") 
+dev.off()
+
+######################################################################
+## D Vs. P
+## PROseq
+body.D.P.rslt <- (results(dds3, contrast=c("condition", "body_D", "body_P")))
+body.D.P.rslt$padj <- ifelse(is.na(body.D.P.rslt$padj), 1, body.D.P.rslt$padj)
+## RNAseq
+load("~/35/Danko_lab/Adriana/rslt/RNAseq/P.D.DESeq.RData")
+D.P.DESeq <- resD_P
+D.P.DESeq$padj <- ifelse(is.na(D.P.DESeq$padj), 1, D.P.DESeq$padj)
+hits1 <- body.D.P.rslt[body.D.P.rslt$padj < 0.05, ] %>% rownames()
+hits2 <- D.P.DESeq[D.P.DESeq$padj < 0.05, ] %>% rownames()
+
+union.gene <- (union(hits1, hits2))
+union.gene <- intersect(intersect(rownames(body.P.LZ.rslt),
+                                  rownames(D.P.DESeq)),
+                        union.gene)
+RNAseq.DEgene <- D.P.DESeq[match(union.gene, rownames(D.P.DESeq)), ]
+PROseq.DEgene <- body.P.LZ.rslt[match(union.gene, rownames(body.P.LZ.rslt)), ]
+
+plot.dat <- data.frame("RNAseq" = RNAseq.DEgene$log2FoldChange, 
+                       "PROseq" = PROseq.DEgene$log2FoldChange)
+rownames(plot.dat) <- rownames(RNAseq.DEgene)
+
+# 
+lm_eqn <- function(df){
+    m <- lm(RNAseq ~ PROseq, df);
+    f <- summary(m)$fstatistic;
+    p <- pf(f[1],f[2],f[3],lower.tail=F);
+    attributes(p) <- NULL;
+    eq <- substitute(italic(r)^2~"="~r2*","~~italic(P)~p,
+         list(r2 = format(summary(m)$r.squared, digits = 3),
+           p = ifelse(p < 1e-10, "< 1e-10", paste0("= ", format(p, digits = 3)))
+           ))
+    as.character(as.expression(eq));
+}
+library(ggplot2)
+library(cowplot)
+library(easyGgplot2)
+
+df <- data.frame(RNAseq = plot.dat$RNAseq, PROseq = plot.dat$PROseq,
+                 d = densCols(plot.dat$RNAseq, plot.dat$PROseq, 
+                             colramp = colorRampPalette(rev(brewer.pal(11,'Spectral')))))
+pdf("./RNA.PRO.D.P.P.LZ.pdf")
+    ggplot(df) +
+    geom_point(aes(RNAseq, PROseq, col = d), size = 2, alpha = 1) +
+    scale_color_identity() +
+    xlim(-8, 8) + ylim(-8, 8) + 
+    xlab("RNAseq log2FC") + 
+    ylab("PROseq log2FC") + 
+    ggtitle("D Vs. P") +
+    theme(plot.title = element_text(size = 17, face = "bold"),
+         axis.text=element_text(size=17),
+         axis.title=element_text(size=17,face="bold")) +
+  geom_text(x = -3, y = 5, label = lm_eqn(plot.dat), parse = TRUE,
+            size = 6) +
+   geom_abline(slope=1, intercept=0, size = 0.3, linetype="dashed") 
+dev.off()
+```
+
