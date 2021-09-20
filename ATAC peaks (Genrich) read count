@@ -1,0 +1,38 @@
+Directory: /local/storage/projects/prophaseI/data/atacseq_genrich
+Date: 08/13/21
+
+##Steps for making bedtools multicov work with ATAC-seq
+
+#sort bam files
+samtools sort DR1.filtered.sorted2.nd.bam > DR1.filtered.sorted3.nd.bam
+samtools sort DR2.filtered.sorted2.nd.bam > DR2.filtered.sorted3.nd.bam
+samtools sort PR1.filtered.sorted2.nd.bam > PR1.filtered.sorted3.nd.bam
+samtools sort PR2.filtered.sorted2.nd.bam > PR2.filtered.sorted3.nd.bam
+samtools sort LZR1.filtered.sorted2.nd.bam > LZR1.filtered.sorted3.nd.bam
+samtools sort LZR2.filtered.sorted2.nd.bam > LZR2.filtered.sorted3.nd.bam
+
+#index bam files
+samtools index DR1.filtered.sorted3.nd.bam
+samtools index DR2.filtered.sorted3.nd.bam
+samtools index PR1.filtered.sorted3.nd.bam
+samtools index PR2.filtered.sorted3.nd.bam
+samtools index LZR1.filtered.sorted3.nd.bam
+samtools index LZR2.filtered.sorted3.nd.bam
+
+#awk narrowPeak file to bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' LZ.narrowPeak > LZ.peaks.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' P.narrowPeak > P.peaks.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' D.narrowPeak > D.peaks.bed
+
+#sort bed files (Genrich peak call files)
+sort -k1,1 -k2,2n LZ.peaks.bed > LZ.peaks.sorted.bed #54664
+sort -k1,1 -k2,2n P.peaks.bed > P.peaks.sorted.bed #58393
+sort -k1,1 -k2,2n D.peaks.bed > D.peaks.sorted.bed #78632
+
+#Take union all peak call files for symmetrical analysis
+ex) cat LZ.peaks.sorted.bed P.peaks.sorted.bed D.peaks.sorted.bed > All_genrich_peaks.bed
+	sort -k1,1 -k2,2n All_genrich_peaks.bed > All_genrich_peaks.sorted.bed
+	bedtools merge -i All_genrich_peaks.sorted.bed > All_merge_genrich_peaks.bed
+	
+#bedtools multicov
+	bedtools multicov -bams LZR1.filtered.sorted3.nd.bam LZR2.filtered.sorted3.nd.bam PR1.filtered.sorted3.nd.bam PR2.filtered.sorted3.nd.bam DR1.filtered.sorted3.nd.bam DR2.filtered.sorted3.nd.bam -bed All_merge_genrich_peaks.bed > All.ATAC.genrich.counts
