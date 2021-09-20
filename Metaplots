@@ -1,0 +1,605 @@
+path /local/storage/projects/prophaseI/metaplots
+
+###TSS Metaplots
+
+#readtable
+genes <- read.table("/local/storage/projects/prophaseI/annotations/tuSelecter/final_tus.txt", header = TRUE, sep = "", dec = ".")
+tss <- as.data.frame.matrix(genes[])
+
+#make the chromEnd into chromStart +1 for genes on the plus strand
+tss[tss[,6]=="+",3] <- tss[tss[,6]=="+",2]+1
+
+#makes the chromEnd into chromStart +1 for genes on the minus strand
+tss[tss[,6] == "-",2] <- tss[tss[,6]=="-",3]-1
+
+
+#Only need first six columns
+tss_use <- tss[,1:6]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+##ATACseq, try 3 columns
+tss_atac <- tss[,1:3]
+tss_atac <- tss_atac[-c(42970),]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+
+
+pdf("PROrad.pdf") #done
+
+dist <- 10000
+
+pth="./"
+metaPlot_str(bed=tss_use, HP="LZ_merged_all_plus.rpkm.rad.bw", HM="LZ_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("red", "red", "white", "white"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="P_merged_all_plus.rpkm.rad.bw", HM="P_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("gray48", "gray48", "white", "white"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="D_merged_all_plus.rpkm.rad.bw", HM="D_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("blue", "blue", "white", "white"))
+
+dev.off()
+
+
+pdf("ATACtest.pdf")
+
+pth="/local/storage/projects/prophaseI/data/scaled_files/atacseq/"
+metaPlot(tss_atac, "LZ_merged.bw", path=pth, stp=10, halfWindow=300, col = "red", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(tss_atac, "P_merged.bw", path=pth, stp=10, halfWindow=300, col = "gray48", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(tss_atac, "D_merged.bw", path=pth, stp=10, halfWindow=300, col = "blue", ylim=c(0.1,2.0))
+
+dev.off()
+
+legend('topleft',
+       legend = c("Leptonema/Zygonema", "Pachynema", "Diplonema"),
+       col = c("red", "gray48", "blue"),
+       lty = 1,
+       cex = 1)
+________________________________________________________________________________________________________
+###X Chromosome TSS Metaplots
+
+#readtable
+genes <- read.table("/local/storage/projects/prophaseI/annotations/tuSelecter/chrX_final_tus.txt", header = TRUE, sep = "", dec = ".")
+tss <- as.data.frame.matrix(genes[])
+
+#make the chromEnd into chromStart +1 for genes on the plus strand
+tss[tss[,6]=="+",3] <- tss[tss[,6]=="+",2]+1
+
+#makes the chromEnd into chromStart +1 for genes on the minus strand
+tss[tss[,6] == "-",2] <- tss[tss[,6]=="-",3]-1
+
+
+#Only need first six columns
+tss_use <- tss[,1:6]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+##ATACseq, try 3 columns
+tss_atac <- tss[,1:3]
+tss_atac <- tss_atac[-c(42970),]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+
+
+pdf("PROXchrRad.pdf") #done
+
+dist <- 10000
+
+pth="./"
+metaPlot_str(bed=tss_use, HP="LZ_merged_all_plus.rpkm.rad.bw", HM="LZ_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("red", "red", "white", "white"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="P_merged_all_plus.rpkm.rad.bw", HM="P_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("gray48", "gray48", "white", "white"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="D_merged_all_plus.rpkm.rad.bw", HM="D_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("blue", "blue", "white", "white"))
+
+dev.off()
+
+
+pdf("ATACXchr.pdf")
+
+pth="./"
+metaPlot(tss_atac, "LZ_merged.bw", path=pth, stp=10, halfWindow=300, col = "red", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(tss_atac, "P_merged.bw", path=pth, stp=10, halfWindow=300, col = "gray48", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(tss_atac, "D_merged.bw", path=pth, stp=10, halfWindow=300, col = "blue", ylim=c(0.1,2.0))
+
+dev.off()
+
+legend('topleft',
+       legend = c("Leptonema/Zygonema", "Pachynema", "Diplonema"),
+       col = c("red", "gray48", "blue"),
+       lty = 1,
+       cex = 1)
+________________________________________________________________________________________________________
+###Y Chromosome TSS Metaplots
+
+#readtable
+genes <- read.table("/local/storage/projects/prophaseI/annotations/tuSelecter/chrY_final_tus.txt", header = TRUE, sep = "", dec = ".")
+tss <- as.data.frame.matrix(genes[])
+
+#make the chromEnd into chromStart +1 for genes on the plus strand
+tss[tss[,6]=="+",3] <- tss[tss[,6]=="+",2]+1
+
+#makes the chromEnd into chromStart +1 for genes on the minus strand
+tss[tss[,6] == "-",2] <- tss[tss[,6]=="-",3]-1
+
+
+#Only need first six columns
+tss_use <- tss[,1:6]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+##ATACseq, try 3 columns
+tss_atac <- tss[,1:3]
+tss_atac <- tss_atac[-c(42970),]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+
+
+pdf("PROYchrRad.pdf") 
+
+dist <- 10000
+
+pth="./"
+metaPlot_str(bed=tss_use, HP="LZ_merged_all_plus.rpkm.rad.bw", HM="LZ_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("red", "red", "white", "white"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="P_merged_all_plus.rpkm.rad.bw", HM="P_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("gray48", "gray48", "white", "white"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="D_merged_all_plus.rpkm.rad.bw", HM="D_merged_all_minus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.1,0.15), col = c("blue", "blue", "white", "white"))
+
+dev.off()
+
+
+pdf("ATACYChr.pdf")
+
+pth="./"
+metaPlot(tss_atac, "LZ_merged.bw", path=pth, stp=10, halfWindow=300, col = "red", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(tss_atac, "P_merged.bw", path=pth, stp=10, halfWindow=300, col = "gray48", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(tss_atac, "D_merged.bw", path=pth, stp=10, halfWindow=300, col = "blue", ylim=c(0.1,2.0))
+
+dev.off()
+
+legend('topleft',
+       legend = c("Leptonema/Zygonema", "Pachynema", "Diplonema"),
+       col = c("red", "gray48", "blue"),
+       lty = 1,
+       cex = 1)
+________________________________________________________________________________________________________
+###3' Metaplots -no diff in proseq
+
+#readtable
+genes <- read.table("final_tus.txt", header = TRUE, sep = "", dec = ".")
+tss <- as.data.frame.matrix(genes[])
+
+#make the chromEnd into chromStart +1 for genes on the plus strand
+tss[tss[,6]=="+",2] <- tss[tss[,6]=="+",3]-1
+
+#makes the chromEnd into chromStart +1 for genes on the minus strand
+tss[tss[,6] == "-",3] <- tss[tss[,6]=="-",2]+1
+
+
+#Only need first six columns
+tss_use <- tss[,1:6]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+#ATACseq, try 3 columns
+tss_atac <- tss[,1:3]
+tss_atac <- tss_atac[-c(42970),]
+
+#Row 42970 is too close to zero...
+tss_use <- tss_use[-c(42970),]
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+
+
+pdf("PRO_3'test.pdf")
+
+dist <- 10000
+
+pth="/local/storage/projects/prophaseI/data/scaled_files/proseq/normBW/"
+metaPlot_str(bed=tss_use, HP="LZ_merged_all_plus.rpkm.bw", HM="LZ_merged_all_minus.rpkm.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.01,0.02), col = c("red", "red"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="P_merged_all_plus.rpkm.bw", HM="P_merged_all_minus.rpkm.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.01,0.02), col = c("gray48", "gray48"))
+par(new=TRUE)
+metaPlot_str(bed=tss_use, HP="D_merged_all_plus.rpkm.bw", HM="D_merged_all_minus.rpkm.bw", path=pth, stp=10, halfWindow=300, ylim=c(-0.01,0.02), col = c("blue", "blue"))
+
+dev.off()
+
+
+pdf("ATAC_3'test.pdf")
+
+pth="/local/storage/projects/prophaseI/data/scaled_files/atacseq/"
+metaPlot(tss_atac, "LZ_merged.bw", path=pth, stp=10, halfWindow=300, col="red", ylim=c(0.0,0.7), color="red")
+par(new=TRUE)
+metaPlot(tss_atac, "P_merged.bw", path=pth, stp=10, halfWindow=300, col="green", ylim=c(0.0,0.7), color="green")
+par(new=TRUE)
+metaPlot(tss_atac, "D_merged.bw", path=pth, stp=10, halfWindow=300, col="blue", ylim=c(0.0,0.7), color="blue")
+
+dev.off()
+
+
+
+
+________________________________________________________________________________________________________
+###SPO11 Hotspot Metaplots- no signal in proseq
+
+#readtable
+read <- read.table("/local/storage/projects/prophaseI/annotations/tuSelecter/B6.SPO11_hotspot.tsv", header = FALSE, sep = "", dec = ".")
+SPO11 <- as.data.frame.matrix(read[,1:3])
+
+#weird chromosomes
+SPO11 <- SPO11[-c(9612:9616,13380:13389),]
+"9612  chr4_GL456216_random     17513     17570
+9613  chr4_GL456216_random     19371     19447
+9614  chr4_GL456216_random     24173     24216
+9615  chr4_GL456216_random     28197     28820
+9616  chr4_JH584292_random     14658     14764"
+
+'13380       chrUn_GL456370       252      1823
+13381       chrUn_GL456370      4312      5136
+13382       chrUn_GL456370      6702      8210
+13383       chrUn_GL456370     11308     19942
+13384       chrUn_GL456370     21359     23283
+13385       chrUn_GL456370     25540     26320
+13386       chrUn_GL456389     10623     10690
+13387       chrUn_GL456392     22550     22863
+13388       chrUn_JH584304     53930     54021
+13389       chrUn_JH584304     68933     68984'
+
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+        }
+
+pdf("PRO_DSBrad.pdf")#done
+
+dist <- 10000
+
+pth="./"
+metaPlot(SPO11,"LZ_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0.0,0.15), col = "red")
+par(new=TRUE)
+metaPlot(SPO11,"P_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0.0,0.15), col = "gray48")
+par(new=TRUE)
+metaPlot(SPO11,"D_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0.0,0.15), col = "blue")
+
+dev.off()
+
+
+pdf("ATAC_DSBtest.pdf")
+
+pth="/local/storage/projects/prophaseI/data/scaled_files/atacseq/"
+metaPlot(SPO11, "LZ_merged.bw", path=pth, stp=10, halfWindow=300, col = "red", ylim=c(0.1,0.4))
+par(new=TRUE)
+metaPlot(SPO11, "P_merged.bw", path=pth, stp=10, halfWindow=300, col = "gray48", ylim=c(0.1,0.4))
+par(new=TRUE)
+metaPlot(SPO11, "D_merged.bw", path=pth, stp=10, halfWindow=300, col = "blue", ylim=c(0.1,0.4))
+
+dev.off()
+
+________________________________________________________________________________________________________
+###PRDM9 in SPO11 Hotspot Metaplots- no signal in proseq
+
+#readtable
+read <- read.table("/local/storage/projects/prophaseI/annotations/tuSelecter/B6.PRDM9_motif_in_hotspot.tsv", header = FALSE, sep = "", dec = ".")
+PRDM9 <- as.data.frame.matrix(read[,1:3])
+PRDM9 <- PRDM9[-c(8689),]
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+        }
+
+pdf("PRO_PRDM9rad.pdf") #done
+
+dist <- 10000
+
+pth="./"
+metaPlot(PRDM9,"LZ_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0,0.15), col="red")
+par(new=TRUE)
+metaPlot(PRDM9,"P_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0,0.15), col="gray48")
+par(new=TRUE)
+metaPlot(PRDM9,"D_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0,0.15), col="blue")
+
+dev.off()
+
+
+pdf("ATAC_PRDM9test.pdf")
+
+pth="/local/storage/projects/prophaseI/data/scaled_files/atacseq/"
+metaPlot(PRDM9, "LZ_merged.bw", path=pth, stp=10, halfWindow=300, col="red", ylim=c(0.1,0.5))
+par(new=TRUE)
+metaPlot(PRDM9, "P_merged.bw", path=pth, stp=10, halfWindow=300, col="gray48", ylim=c(0.1,0.5))
+par(new=TRUE)
+metaPlot(PRDM9, "D_merged.bw", path=pth, stp=10, halfWindow=300, col="blue", ylim=c(0.1,0.5))
+
+dev.off()
+
+________________________________________________________________________________________________________
+###Are D specific peaks transcribed?
+
+
+#readtable
+read <- read.table("/local/storage/projects/prophaseI/data/atacseq_genrich/Peaks_unique_to_D_atac.bed", header = FALSE, sep = "", dec = ".")
+Dpeaks <- as.data.frame.matrix(read[,1:3])
+Dpeaks <- Dpeaks[-c(33908:33909),]
+
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+        }
+
+pdf("PRO_Dpeaksrad.pdf") #done
+
+dist <- 10000
+
+pth="./"
+metaPlot(Dpeaks,"LZ_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0,0.15), col="red")
+par(new=TRUE)
+metaPlot(Dpeaks,"P_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0,0.15), col="gray48")
+par(new=TRUE)
+metaPlot(Dpeaks,"D_merged_all_plus.rpkm.rad.bw", path=pth, stp=10, halfWindow=300, ylim=c(0,0.15), col="blue")
+
+dev.off()
+
+
+________________________________________________________________________________________________________
+###Are D specific peaks more accessible in D?
+
+
+#readtable
+read <- read.table("/local/storage/projects/prophaseI/data/atacseq_genrich/Peaks_unique_to_D_atac.bed", header = FALSE, sep = "", dec = ".")
+Dpeaks <- as.data.frame.matrix(read[,1:3])
+Dpeaks <- Dpeaks[-c(33908:33909),]
+
+
+require(bigWig)
+
+metaPlot <- function(bed, HP_FILE, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+        HP <- load.bigWig(paste(path, HP_FILE, sep=""))
+        H_meta <- metaprofile.bigWig(bed, HP, step=stp)
+
+        N = length(H_meta$middle)
+        x = 1:N*stp
+
+        plot.metaprofile(H_meta, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+}
+
+metaPlot_str <- function(bed, HP, HM, path="./", stp= 100, halfWindow= 10000, ...) {
+        bed <- center.bed(bed, halfWindow, halfWindow)
+
+        HP <- load.bigWig(paste(path, HP, sep=""))
+        HM <- load.bigWig(paste(path, HM, sep=""))
+
+        H_meta_p <- metaprofile.bigWig(bed, HP, HM, step=stp)
+        H_meta_m <- metaprofile.bigWig(bed, HM, HP, step=stp)
+
+        N = length(H_meta_p$middle)
+        x = 1:N*stp ## ((1:N) - N/2)* stp
+
+        plot.metaprofile(H_meta_p, minus.profile=H_meta_m, X0= 0, ...)
+        abline(v=halfWindow, lty="dotted")
+        }
+
+pdf("ATAC_Dpeaks.pdf") #done
+
+
+pth="/local/storage/projects/prophaseI/data/scaled_files/atacseq/"
+metaPlot(Dpeaks, "LZ_merged.bw", path=pth, stp=10, halfWindow=300, col="red", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(Dpeaks, "P_merged.bw", path=pth, stp=10, halfWindow=300, col="gray48", ylim=c(0.1,2.0))
+par(new=TRUE)
+metaPlot(Dpeaks, "D_merged.bw", path=pth, stp=10, halfWindow=300, col="blue", ylim=c(0.1,2.0))
+
+dev.off()
