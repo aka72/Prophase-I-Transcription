@@ -1,0 +1,89 @@
+###Merging and sorting files for viewing in genome browser
+______________________________________________________________________________________________________________________________
+##ATACseq
+pth="/local/storage/projects/prophaseI/data/scaled_files/atacseq/"
+#Merge files
+samtools merge LZ_merged.bam L-Z_05-19-17.filtered.sorted.nd.bam L-Z_05-31-17.filtered.sorted.nd.bam
+samtools merge P_merged.bam Pachy_05-19-17.filtered.sorted.nd.bam Pachy_05-31-17.filtered.sorted.nd.bam
+samtools merge D_merged.bam Diplo_05-19-17.filtered.sorted.nd.bam Diplo_05-31-17.filtered.sorted.nd.bam
+
+#Sort files
+samtools sort LZ_merged.bam > LZ_merged.sorted.bam
+samtools sort P_merged.bam > P_merged.sorted.bam
+samtools sort D_merged.bam > D_merged.sorted.bam
+
+#Flagstats
+samtools flagstat LZ_merged.sorted.bam >> flagstats.txt
+samtools flagstat P_merged.sorted.bam >> flagstats.txt
+samtools flagstat D_merged.sorted.bam >> flagstats.txt
+
+#rpm
+cat flagstats.txt | grep '+ 0 mapped' | awk '{print ($1/1000000)}' > read_depth
+
+#bedtools genomecov -bg -scale
+bedtools genomecov -ibam LZ_merged.sorted.bam -bg -scale 0.0136 > LZ_merged.sorted.bdg
+
+bedtools genomecov -ibam P_merged.sorted.bam -bg -scale 0.0046 > P_merged.sorted.bdg
+bedtools genomecov -ibam D_merged.sorted.bam -bg -scale 0.0119 > D_merged.sorted.bdg
+
+#sort
+sort -k1,1 -k2,2n LZ_merged.sorted.bdg > LZ_merged.sorted2.bdg
+sort -k1,1 -k2,2n P_merged.sorted.bdg > P_merged.sorted2.bdg
+sort -k1,1 -k2,2n D_merged.sorted.bdg > D_merged.sorted2.bdg
+
+#bg to bw -need bedGraphToBigWig and mm10.chrominfo.sizes in same directory
+../bedGraphToBigWig ./LZ_merged.sorted2.bdg ../mm10.chromInfo.sizes ./LZ_merged.bw
+../bedGraphToBigWig ./P_merged.sorted2.bdg ../mm10.chromInfo.sizes ./P_merged.bw
+../bedGraphToBigWig ./D_merged.sorted2.bdg ../mm10.chromInfo.sizes ./D_merged.bw
+
+
+_____________________________________________________________________________________________________________________________
+
+##RNAseq
+
+#Merge files
+samtools merge LZ_merged.bam LZ_R1_Aligned.sortedByCoord.out.bam LZ_R2_Aligned.sortedByCoord.out.bam LZ_R3_Aligned.sortedByCoord.out.bam
+samtools merge P_merged.bam P_R1_Aligned.sortedByCoord.out.bam P_R2_Aligned.sortedByCoord.out.bam P_R3_Aligned.sortedByCoord.out.bam
+samtools merge D_merged.bam D_R1_Aligned.sortedByCoord.out.bam D_R2_Aligned.sortedByCoord.out.bam D_R3_Aligned.sortedByCoord.out.bam
+
+
+#Flagstats
+samtools flagstat LZ_merged.bam >> flagstats.txt
+samtools flagstat P_merged.bam >> flagstats.txt
+samtools flagstat D_merged.bam >> flagstats.txt
+
+#rpm
+cat flagstats.txt | grep '+ 0 mapped' | awk '{print ($1/1000000)}' > read_depth
+
+#bedtools genomecov -bg -scale
+bedtools genomecov -ibam LZ_merged.bam -bga -scale -0.0096 -split -strand + > LZ_merged_minus.bdg
+
+bedtools genomecov -ibam LZ_merged.bam -bga -scale 0.0096 -split -strand - > LZ_merged_plus.bdg
+bedtools genomecov -ibam P_merged.bam -bga -scale -0.0119 -split -strand + > P_merged_minus.bdg
+bedtools genomecov -ibam P_merged.bam -bga -scale 0.0119 -split -strand - > P_merged_plus.bdg
+bedtools genomecov -ibam D_merged.bam -bga -scale -0.0113 -split -strand + > D_merged_minus.bdg
+bedtools genomecov -ibam D_merged.bam -bga -scale 0.0113 -split -strand - > D_merged_plus.bdg
+
+#Sort
+sort -k1,1 -k2,2n LZ_merged_plus.bdg > LZ_merged_sorted.plus.bdg
+sort -k1,1 -k2,2n LZ_merged_minus.bdg > LZ_merged_sorted.minus.bdg
+sort -k1,1 -k2,2n P_merged_plus.bdg > P_merged_sorted.plus.bdg
+sort -k1,1 -k2,2n P_merged_minus.bdg > P_merged_sorted.minus.bdg
+sort -k1,1 -k2,2n D_merged_plus.bdg > D_merged_sorted.plus.bdg
+sort -k1,1 -k2,2n D_merged_minus.bdg > D_merged_sorted.minus.bdg
+
+#Remove rRNA and ChrM
+LZ_merged_sorted.plus.bdg | grep "rRNA\|chrM" -v > LZ_merged_sorted.nr.plus.bdg
+LZ_merged_sorted.minus.bdg | grep "rRNA\|chrM" -v > LZ_merged_sorted.nr.minus.bdg
+P_merged_sorted.plus.bdg | grep "rRNA\|chrM" -v > P_merged_sorted.nr.plus.bdg
+P_merged_sorted.minus.bdg | grep "rRNA\|chrM" -v > P_merged_sorted.nr.minus.bdg
+D_merged_sorted.plus.bdg | grep "rRNA\|chrM" -v > D_merged_sorted.nr.plus.bdg
+D_merged_sorted.minus.bdg | grep "rRNA\|chrM" -v > D_merged_sorted.nr.minus.bdg
+
+#bg to bw -need bedGraphToBigWig and mm10.chrominfo.sizes in same directory
+../bedGraphToBigWig ./LZ_merged_sorted.nr.plus.bdg ../mm10.chromInfo.sizes ./LZ_merged_all.plus.bw
+../bedGraphToBigWig ./LZ_merged_sorted.nr.minus.bdg ../mm10.chromInfo.sizes ./LZ_merged_all.minus.bw
+../bedGraphToBigWig ./P_merged_sorted.nr.plus.bdg ../mm10.chromInfo.sizes ./P_merged_all.plus.bw
+../bedGraphToBigWig ./P_merged_sorted.nr.minus.bdg ../mm10.chromInfo.sizes ./P_merged_all.minus.bw
+../bedGraphToBigWig ./D_merged_sorted.nr.plus.bdg ../mm10.chromInfo.sizes ./D_merged_all.plus.bw
+../bedGraphToBigWig ./D_merged_sorted.nr.minus.bdg ../mm10.chromInfo.sizes ./D_merged_all.minus.bw
