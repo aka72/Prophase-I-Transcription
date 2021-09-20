@@ -1,0 +1,82 @@
+Directory: /local/storage/projects/prophaseI/Limmaradnormalized
+Date: 08/13/21
+
+load("./body.P.LZ.RData")
+load("./body.D.P.RData")
+load("./pol2.P.LZ.RData")
+load("./pol2.D.P.RData")
+
+##Make gene list for gene classes on x chromosome
+awk 'BEGIN{OFS="\t"};{print $4}' proteincoding_chrX_final_tus.txt > proteincodingNAMES_chrX_final_tus.txt
+awk 'BEGIN{OFS="\t"};{print $4}' miRNA_chrX_final_tus.txt > miRNANAMES_chrX_final_tus.txt
+awk 'BEGIN{OFS="\t"};{print $4}' lincRNA_chrX_final_tus.txt > lincRNANAMES_chrX_final_tus.txt
+
+awk 'BEGIN{OFS="\t"};{print $4}' proteincoding_auto_tus.txt > proteincodingNAMES_auto_tus.txt
+awk 'BEGIN{OFS="\t"};{print $4}' miRNA_auto_tus.txt > miRNANAMES_auto_tus.txt
+awk 'BEGIN{OFS="\t"};{print $4}' lincRNA_auto_tus.txt > lincRNANAMES_auto_tus.txt
+
+##sort DESeq2 results based off padj and lfc
+body.P.LZOrdered_05<-subset(body.P.LZ[order(body.P.LZ$padj),], padj < 0.05)
+body.P.LZOrdered_05_l2fc<-subset(body.P.LZOrdered_05[order(body.P.LZOrdered_05$log2FoldChange),])
+save(body.P.LZOrdered_05_l2fc, file="./body.P.LZOrdered_05_l2fc.RData")
+write.csv(as.data.frame(body.P.LZOrdered_05_l2fc), file="body.P.LZOrdered_05_l2fc.bed")
+
+body.D.POrdered_05<-subset(body.D.P[order(body.D.P$padj),], padj < 0.05)
+body.D.POrdered_05_l2fc<-subset(body.D.POrdered_05[order(body.D.POrdered_05$log2FoldChange),])
+save(body.D.POrdered_05_l2fc, file="./body.D.POrdered_05_l2fc.RData")
+write.csv(as.data.frame(body.D.POrdered_05_l2fc), file="body.D.POrdered_05_l2fc.bed")
+
+pol2.P.LZOrdered_05<-subset(pol2.P.LZ[order(pol2.P.LZ$padj),], padj < 0.05)
+pol2.P.LZOrdered_05_l2fc<-subset(pol2.P.LZOrdered_05[order(pol2.P.LZOrdered_05$log2FoldChange),])
+save(pol2.P.LZOrdered_05_l2fc, file="./pol2.P.LZOrdered_05_l2fc.RData")
+write.csv(as.data.frame(pol2.P.LZOrdered_05_l2fc), file="pol2.P.LZOrdered_05_l2fc.bed")
+
+pol2.D.POrdered_05<-subset(pol2.D.P[order(pol2.D.P$padj),], padj < 0.05)
+pol2.D.POrdered_05_l2fc<-subset(pol2.D.POrdered_05[order(pol2.D.POrdered_05$log2FoldChange),])
+save(pol2.D.POrdered_05_l2fc, file="./pol2.D.POrdered_05_l2fc.RData")
+write.csv(as.data.frame(pol2.D.POrdered_05_l2fc), file="pol2.D.POrdered_05_l2fc.bed")
+
+###Grep gene class file into DE file
+##Protein Coding
+#X
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/proteincodingNAMES_chrX_final_tus.txt body.P.LZOrdered_05_l2fc.bed > body.P.LZOrdered_05_l2fc.XPROTEINCODINGGENES.bed 157 (all up)
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/proteincodingNAMES_chrX_final_tus.txt body.D.POrdered_05_l2fc.bed > body.D.POrdered_05_l2fc.PROTEINCODINGXGENES.bed 136 (all down)
+
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/proteincodingNAMES_chrX_final_tus.txt pol2.P.LZOrdered_05_l2fc.bed > pol2.P.LZOrdered_05_l2fc.PROTEINCODINGXGENES.bed 89 (all up)
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/proteincodingNAMES_chrX_final_tus.txt pol2.D.POrdered_05_l2fc.bed > pol2.D.POrdered_05_l2fc.PROTEINCODINGXGENES.bed 227 (all down)
+
+#autosomes
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/proteincodingNAMES_auto_tus.txt body.P.LZOrdered_05_l2fc.bed > body.P.LZOrdered_05_l2fc.autoPROTEINCODINGGENES.bed 5080 (all up)
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/proteincodingNAMES_auto_tus.txt body.D.POrdered_05_l2fc.bed > body.D.POrdered_05_l2fc.autoPROTEINCODINGGENES.bed 3157 (all down)
+
+###miRNA
+##all zero results
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/miRNANAMES_chrX_final_tus.txt body.P.LZOrdered_05_l2fc.bed > body.P.LZOrdered_05_l2fc.miRNAXGENES.bed 
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/miRNANAMES_chrX_final_tus.txt body.D.POrdered_05_l2fc.bed > body.D.POrdered_05_l2fc.miRNAXGENES.bed
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/miRNANAMES_chrX_final_tus.txt pol2.P.LZOrdered_05_l2fc.bed > pol2.P.LZOrdered_05_l2fc.miRNAXGENES.bed
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/miRNANAMES_chrX_final_tus.txt pol2.D.POrdered_05_l2fc.bed > pol2.D.POrdered_05_l2fc.miRNAXGENES.bed
+
+#autosomes
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/miRNANAMES_auto_tus.txt body.P.LZOrdered_05_l2fc.bed > body.P.LZOrdered_05_l2fc.automiRNA.bed 0
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/miRNANAMES_auto_tus.txt body.D.POrdered_05_l2fc.bed > body.D.POrdered_05_l2fc.automiRNA.bed 0
+
+####lincRNA
+##all zero results
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/lincRNANAMES_chrX_final_tus.txt body.P.LZOrdered_05_l2fc.bed > body.P.LZOrdered_05_l2fc.lincRNAXGENES.bed
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/lincRNANAMES_chrX_final_tus.txt body.D.POrdered_05_l2fc.bed > body.D.POrdered_05_l2fc.lincRNAXGENES.bed
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/lincRNANAMES_chrX_final_tus.txt pol2.P.LZOrdered_05_l2fc.bed > pol2.P.LZOrdered_05_l2fc.lincRNAXGENES.bed
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/lincRNANAMES_chrX_final_tus.txt pol2.D.POrdered_05_l2fc.bed > pol2.D.POrdered_05_l2fc.lincRNAXGENES.bed
+
+#autosomes
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/lincRNANAMES_auto_tus.txt body.P.LZOrdered_05_l2fc.bed > body.P.LZOrdered_05_l2fc.autolincRNA.bed 236 (all up)
+grep -f /local/storage/projects/prophaseI/annotations/tuSelecter/lincRNANAMES_auto_tus.txt body.D.POrdered_05_l2fc.bed > body.D.POrdered_05_l2fc.autolincRNA.bed 153 (all down)
+
+
+
+fit <- euler(c("A" = 2211, "B" = 0, "C" = 0,
+               "A&B" = 127, "A&C" = 86, "B&C" = 0, 
+               "A&B&C" = 50),
+             shape = "circle")
+pdf("venn_Xdecircle.pdf")
+plot(fit)
+dev.off()
