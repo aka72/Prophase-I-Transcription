@@ -1,0 +1,135 @@
+Directory: /local/storage/projects/prophaseI/dREG_deseq2
+Date: 08/26/21
+
+#####################################################################################
+#####Merge dREG peaks#####
+#####################################################################################
+
+##awk file to bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' LZ_merged_all.dREG.peak.full.bed > LZ_merged_all.dREG.peak.full.columns13.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' P_merged_all.dREG.peak.full.bed > P_merged_all.dREG.peak.full.columns13.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' D_merged_all.dREG.peak.full.bed > D_merged_all.dREG.peak.full.columns13.bed
+
+##sort bed files (DREG peak call files)
+sort -k1,1 -k2,2n LZ_merged_all.dREG.peak.full.columns13.bed > LZ.peaks.sorted.bed #71107
+sort -k1,1 -k2,2n P_merged_all.dREG.peak.full.columns13.bed > P.peaks.sorted.bed #68352
+sort -k1,1 -k2,2n D_merged_all.dREG.peak.full.columns13.bed > D.peaks.sorted.bed #38603
+
+##Take union all peak call files for symmetrical analysis
+cat LZ.peaks.sorted.bed P.peaks.sorted.bed D.peaks.sorted.bed > All_dreg_peaks.bed
+	sort -k1,1 -k2,2n All_dreg_peaks.bed > All_dreg_peaks.sorted.bed
+	bedtools merge -i All_dreg_peaks.sorted.bed > All_dreg_genrich_peaks.bed
+	mv  All_dreg_genrich_peaks.bed All_dreg_peaks_useforcounts.bed
+
+##bedtools multicov ##bams need to be sorted and indexed
+bedtools multicov -bams LZ_R1.sorted.bam LZ_R2.sorted.bam LZ_R3.sorted.bam LZ_R4.sorted.bam P_R1.sorted.bam P_R2.sorted.bam P_R3.sorted.bam P.R4.sorted.bam D_R1.sorted.bam D_R2.sorted.bam D_R3.sorted.bam D_R4.sorted.bam -bed All_dreg_peaks_useforcounts.bed > All.dREG.counts
+
+#####################################################################################
+#####DESeq2#####
+#####################################################################################	
+
+##DESeq2
+library("DESeq2")
+setwd("./")
+
+counts <- as.data.frame(read.csv("All.dREG.counts",sep="\t"), header=FALSE)
+colnames(counts) <- c("contig","begin","end","LZR1", "LZR2", "LZR3", "LZR4", "PR1", "PR2", "PR3", "PR4", "DR1", "DR2", "DR3", "DR4")
+
+attach(counts)
+names(counts)
+counts$peak <- paste(counts$contig,":",counts$begin,"-",counts$end,sep="")
+
+rownames(counts) <- counts$peak
+counts$contig<-NULL 
+counts$end<-NULL
+counts$begin<-NULL
+counts$peak<-NULL
+counts$contig<-NULL
+
+cols <- read.table("dREG_columns.txt",row.names=1, header=FALSE)
+colnames(cols) <- c('stage')
+
+dds <- DESeqDataSetFromMatrix(countData = counts,colData = cols,
+                              design = ~ stage)
+sizeFactors(dds) <- c(3176013,18807759,14145068,33563464,6470470,6181809,5708847,13023631,6697004,7470531,14690503,3711683)
+
+ddstest <- DESeq(dds, fitType = "local")
+sizeFactors(ddstest)
+
+###res <- results(ddstest)
+resOrdered <- res[order(res$padj),]
+sum(res$padj < 0.30, na.rm=TRUE) #0
+res30 <- subset(resOrdered, padj < 0.30)###
+
+resP_LZ<-results(ddstest, contrast=c("stage","Pachynema","Leptonema/Zygonema"))
+resP_LZOrdered_03<-subset(resP_LZ[order(resP_LZ$pvalue),], pvalue < 0.3)
+sum(resP_LZ$pvalue < 0.3, na.rm=TRUE) #2131
+
+summary(resP_LZOrdered_95)
+#out of 190 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 16, 8.4%
+LFC < 0 (down)     : 0, 0%
+outliers [1]       : 0, 0%
+low counts [2]     : 0, 0%
+(mean count < 0)
+
+
+resP_LZOrdered_03_l2fc<-subset(resP_LZOrdered_03[order(resP_LZOrdered_03$log2FoldChange),])
+
+write.csv(as.data.frame(res), file="DeSEQ2_dREG_results.bed")
+write.csv(as.data.frame(resP_LZOrdered_03_l2fc),file="DeSEQ2_dREG_P_LZ.bed")
+
+resD_P<-results(ddstest, contrast=c("stage","Diplonema","Pachynema"))
+resD_POrdered_03<-subset(resD_P[order(resD_P$pvalue),], pvalue < 0.3)
+sum(resD_P$pvalue < 0.3, na.rm=TRUE) #3233
+
+summary(resD_POrdered_95)
+#out of 62133 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 0, 0%
+LFC < 0 (down)     : 0, 0%
+outliers [1]       : 0, 0%
+low counts [2]     : 0, 0%
+(mean count < 0)
+
+resD_POrdered_03_l2fc<-subset(resD_POrdered_03[order(resD_POrdered_03$log2FoldChange),])
+
+write.csv(as.data.frame(resD_POrdered_03_l2fc),file="DeSEQ2_dREG_D_P.bed")
+
+#####################################################################################
+#####Volanco Plots#####
+#####################################################################################
+
+
+library(EnhancedVolcano)
+library(airway)
+library(magrittr)
+
+pdf("Volcano_dreg_PLZ.pdf")
+  EnhancedVolcano(resP_LZ,
+    lab = rownames(resP_LZ),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    ylim = c(0, -log10(10e-8)),
+    pCutoff = 0.3,
+    FCcutoff = 0.6,
+    pointSize = 3.0,
+    labSize = 6.0,
+    col=c("#61b6cc", "#61b6cc", "#61b6cc", "#577F3F"),
+    colAlpha=0.65)
+    dev.off()
+
+pdf("Volcano_dreg_DP.pdf")
+  EnhancedVolcano(resD_P,
+    lab = rownames(resD_P),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    ylim = c(0, -log10(10e-5)),
+    pCutoff = 0.3,
+    FCcutoff = 0.88,
+    pointSize = 3.0,
+    labSize = 6.0,
+    col=c("#61b6cc", "#61b6cc", "#61b6cc", "#577F3F"),
+    colAlpha=0.65)
+    dev.off()
