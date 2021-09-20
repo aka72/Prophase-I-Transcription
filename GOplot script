@@ -1,0 +1,15 @@
+DIRECTORY: /local/storage/projects/prophaseI/data/atacseq_genrich/GO
+Date: 08/16/21
+
+install.packages("GOplot")
+library(GOplot)
+
+chord <- read.csv(file = 'LZtoPGenrich081521.csv',row.names=1, col.names=,1)
+pdf("GOChord_ATAC_P_LZ.pdf")
+GOChord(chord, space = 0.02, gene.order = 'logFC', gene.space = 0.25, gene.size = 5)
+dev.off()
+
+chordPD <- read.csv(file = 'PtoDGenrich081521.csv',row.names=1, col.names=,1)
+pdf("GOChord_ATAC_D_P.pdf")
+GOChord(chordPD, space = 0.02, gene.order = 'logFC', gene.space = 0.25, gene.size = 5)
+dev.off()
