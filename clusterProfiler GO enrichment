@@ -1,0 +1,99 @@
+Directory: /local/storage/projects/prophaseI/Limmaradnormalized/GOanalysis
+Date: 08/17/2021
+
+##Get bed files in right format
+
+D.P <- read.csv(file = 'body.D.POrdered_05_l2fc.PROTEINCODINGXGENES.bed')
+D.P <- (D.P[,1])
+
+
+P.LZ <- read.csv(file = 'body.P.LZOrdered_05_l2fc.XPROTEINCODINGGENES.bed')
+P.LZ <- P.LZ[,1]
+
+intersect <- intersect(D.P,P.LZ) (50 genes overlap)
+
+clust.result <- read.table("/local/storage/projects/prophaseI/Limmaradnormalized/Results_18_Aug_21/Clusters_Objects.tsv", 
+                           header = T, stringsAsFactors = F, sep = "\t")
+clust.result <- clust.result[-1, ]
+clust.result.c1 <- clust.result[,1]
+clust.result.c2 <- clust.result[,2]
+
+##go enrichment####
+library(clusterProfiler)
+library(org.Mm.eg.db)
+keytypes(org.Mm.eg.db)
+library(ggplot2)
+library(enrichplot)
+library(GOSemSim)
+library(DOSE)
+data(geneList)
+
+##convert gene names to entrezid
+
+##X chromosome
+
+ENTREZID.D.P <- AnnotationDbi::select(org.Mm.eg.db, keys=D.P, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+													   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.D.P, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH')
+                                          
+cc.gos <- clusterProfiler::simplify(cc.go, cutoff=0.7, by= "p.adjust")
+
+cc.gos2 <- #manually select ontologies#
+
+pdf("dotplot_xbodiesgo_D_P.pdf")
+dotplot(cc.gos, showCategory = 20, )
+dev.off()
+
+
+#
+ENTREZID.P.LZ <- AnnotationDbi::select(org.Mm.eg.db, keys=P.LZ, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+													   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.P.LZ,
+                                         fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP",pvalueCutoff=0.05, 
+                                          pAdjustMethod='BH', readable=TRUE)
+  cc.gos <- clusterProfiler::simplify(cc.go, cutoff=0.7, by= "p.adjust")                                        
+cc.gop <- pairwise_termsim.compareClusterResult(cc.go)
+
+
+
+pdf("treeplot_xbodiesgo_P_LZ.pdf")
+barplot.compareClusterResult(cc.gos, showCategory = 20)
+dev.off()
+
+
+##heatmap clusters
+#cluster 1
+ENTREZID.c1 <- AnnotationDbi::select(org.Mm.eg.db, keys=clust.result.c1, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+													   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.c1,
+                                         fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP",pvalueCutoff=0.05, 
+                                          pAdjustMethod='BH')
+                                          
+cc.gos <- clusterProfiler::simplify(cc.go, cutoff=0.7, by= "p.adjust")
+
+cc.gos2 <- #manually select ontologies#
+
+pdf("dotplot_c1.pdf")
+dotplot(cc.gos, showCategory = 30)
+dev.off()
+
+
+#cluster 2
+
+ENTREZID.c2 <- AnnotationDbi::select(org.Mm.eg.db, keys=clust.result.c2, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+													   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.c2,
+                                         fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP",pvalueCutoff=0.05, 
+                                          pAdjustMethod='BH')
+                                          
+cc.gos <- clusterProfiler::simplify(cc.go, cutoff=0.7, by= "p.adjust")
+
+cc.gos2 <- #manually select ontologies#
+
+pdf("dotplot_c2.pdf")
+dotplot(cc.gos, showCategory = 30)
+dev.off()
