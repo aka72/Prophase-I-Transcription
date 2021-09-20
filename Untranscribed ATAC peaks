@@ -1,0 +1,9 @@
+Directory: /local/storage/projects/prophaseI/data/atacseq_genrich
+Date: 09/14/21
+Purpose: Sites that don't overlap between dREG and ATAC
+
+bedtools intersect -v -a Peaks_unique_to_LZ_atac.bed -b LZ_merged_all.dREG.peak.full.bed > LZ.dreg.atac.uniquetoatac.peaks.bed #16472
+
+bedtools intersect -v -a Peaks_unique_to_P_atac.bed -b P_merged_all.dREG.peak.full.bed > P.dreg.atac.uniquetoatac.peaks.bed #7758
+
+bedtools intersect -v -a Peaks_unique_to_D_atac.bed -b D_merged_all.dREG.peak.full.bed > D.dreg.atac.uniquetoatac.peaks.bed #32113
