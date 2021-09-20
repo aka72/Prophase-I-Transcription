@@ -1,0 +1,143 @@
+Directory: /local/storage/projects/prophaseI/data/atacseq_genrich
+Date: 08/15/21
+
+bedtools intersect -u -a LZ_merged_all.dREG.peak.full.bed -b LZ.peaks.sorted.bed > LZ.dreg.atac.peaks.bed #28146
+
+bedtools intersect -u -a P_merged_all.dREG.peak.full.bed -b P.peaks.sorted.bed > P.dreg.atac.peaks.bed #32171
+
+bedtools intersect -u -a D_merged_all.dREG.peak.full.bed -b D.peaks.sorted.bed > D.dreg.atac.peaks.bed #23142
+
+#Unique to LZ
+bedtools intersect -v -sorted -a LZ.dreg.atac.peaks.bed -b P.dreg.atac.peaks.bed D.dreg.atac.peaks.bed > Peaks_unique_to_LZ.bed
+#3059
+
+#Unique to P
+bedtools intersect -v -sorted -a P.dreg.atac.peaks.bed -b LZ.dreg.atac.peaks.bed D.dreg.atac.peaks.bed > Peaks_unique_to_P.bed
+#3779
+
+#Unique to D
+bedtools intersect -v -sorted -a D.dreg.atac.peaks.bed -b LZ.dreg.atac.peaks.bed P.dreg.atac.peaks.bed > Peaks_unique_to_D.bed
+#2157
+
+#Unique to LZ and P
+cat LZ.dreg.atac.peaks.bed P.dreg.atac.peaks.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b D.dreg.atac.peaks.bed > Peaks_unique_to_LZ_P.bed
+#10319
+
+#Unique to LZ and D
+cat LZ.dreg.atac.peaks.bed D.dreg.atac.peaks.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b P.dreg.atac.peaks.bed > Peaks_unique_to_LZ_D.bed
+#5316
+
+#Unique to P and D
+cat P.dreg.atac.peaks.bed D.dreg.atac.peaks.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b LZ.dreg.atac.peaks.bed > Peaks_unique_to_P_D.bed
+#8152
+
+#Found in all 3
+bedtools intersect -u -a LZ.dreg.atac.peaks.bed -b P.dreg.atac.peaks.bed | bedtools intersect -u -a stdin -b D.dreg.atac.peaks.bed > Peaks_foundinall3.bed
+#18633
+____________________________________________________________________________________________________
+#####ATAC only peaks#####
+#Unique to LZ
+bedtools intersect -v -sorted -a LZ.peaks.sorted.bed -b P.peaks.sorted.bed D.peaks.sorted.bed > Peaks_unique_to_LZ_atac.bed
+#17496
+
+#Unique to P
+bedtools intersect -v -sorted -a P.peaks.sorted.bed -b LZ.peaks.sorted.bed D.peaks.sorted.bed > Peaks_unique_to_P_atac.bed
+#8640
+
+#Unique to D
+bedtools intersect -v -sorted -a D.peaks.sorted.bed -b LZ.peaks.sorted.bed P.peaks.sorted.bed > Peaks_unique_to_D_atac.bed
+#33967
+
+#Unique to LZ and P
+cat LZ.peaks.sorted.bed P.peaks.sorted.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b D.peaks.sorted.bed > Peaks_unique_to_LZ_P_atac.bed
+#32291
+
+#Unique to LZ and D
+cat LZ.peaks.sorted.bed D.peaks.sorted.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b P.peaks.sorted.bed > Peaks_unique_to_LZ_D_atac.bed
+#53692
+
+#Unique to P and D
+cat P.peaks.sorted.bed D.peaks.sorted.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b LZ.peaks.sorted.bed > Peaks_unique_to_P_D_atac.bed
+#55485
+
+#Found in all 3
+bedtools intersect -u -a LZ.peaks.sorted.bed -b P.peaks.sorted.bed | bedtools intersect -u -a stdin -b D.peaks.sorted.bed > Peaks_foundinall3_atac.bed
+#26420
+
+fit <- euler(c("A" = 17496, "B" = 8640, "C" = 33967,
+               "A&B" = 32291, "A&C" = 53692, "B&C" = 55485, 
+               "A&B&C" = 26420),
+             shape = "ellipse")
+pdf("venn_atac_only_ellipse.pdf")
+plot(fit)
+dev.off()
+___________________________________________________________________________________________________________
+#####dREG only peaks#####
+#Unique to LZ
+bedtools intersect -v -sorted -a LZ_merged_all.dREG.peak.full.bed -b P_merged_all.dREG.peak.full.bed D_merged_all.dREG.peak.full.bed > Peaks_unique_to_LZ_dREG.bed
+#16061
+
+#Unique to P
+bedtools intersect -v -sorted -a P_merged_all.dREG.peak.full.bed -b LZ_merged_all.dREG.peak.full.bed D_merged_all.dREG.peak.full.bed > Peaks_unique_to_P_dREG.bed
+#9754
+
+#Unique to D
+bedtools intersect -v -sorted -a D_merged_all.dREG.peak.full.bed -b LZ_merged_all.dREG.peak.full.bed P_merged_all.dREG.peak.full.bed > Peaks_unique_to_D_dREG.bed
+#2019
+
+#Unique to LZ and P
+cat LZ_merged_all.dREG.peak.full.bed P_merged_all.dREG.peak.full.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b D_merged_all.dREG.peak.full.bed > Peaks_unique_to_LZ_P_dREG.bed
+#39818
+
+#Unique to LZ and D
+cat LZ_merged_all.dREG.peak.full.bed D_merged_all.dREG.peak.full.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b P_merged_all.dREG.peak.full.bed > Peaks_unique_to_LZ_D_dREG.bed
+#18412
+
+#Unique to P and D
+cat P_merged_all.dREG.peak.full.bed D_merged_all.dREG.peak.full.bed | bedtools sort -i stdin | bedtools merge -i stdin | bedtools intersect -v -a stdin -b LZ_merged_all.dREG.peak.full.bed > Peaks_unique_to_P_D_dREG.bed
+#14347
+
+#Found in all 3
+bedtools intersect -u -a LZ_merged_all.dREG.peak.full.bed -b P_merged_all.dREG.peak.full.bed | bedtools intersect -u -a stdin -b D_merged_all.dREG.peak.full.bed > Peaks_foundinall3_dREG.bed
+#33637 
+
+
+fit <- euler(c("A" = 16061, "B" = 9754, "C" = 2019,
+               "A&B" = 39818, "A&C" = 18412, "B&C" = 14347, 
+               "A&B&C" = 33637),
+             shape = "circle")
+pdf("venn_dreg_only_circle.pdf")
+plot(fit)
+dev.off()
+
+##Venn diagram with R ##used eulerr.co
+
+##ATAC-seq
+
+directory: /local/storage/projects/prophaseI/data/atacseq/Shared_peaks
+
+##Vennerable provides Venn diagrams in R. It displays Venn and Euler diagrams for up to 9 different sets and using a variety of geometries. It allows the display of area-weighted Venn diagrams and allows fine graphical control over the result.
+
+##This package needs a couple of BioConductor packages. Something like source("https://bioconductor.org/biocLite.R"); biocLite(c("RBGL","graph")) should get those.
+
+##This package may make it to CRAN one day, but it isn't there now so the easiest way to install it is with the devtools package: install.packages("devtools"); library(devtools);.
+
+##Finally you can actually install it with install_github("js229/Vennerable"); library(Vennerable);
+
+##The function based documentation is sketchy. A better guide is the Venn vignette which you can see with vignette("Venn").
+
+##New Installation 2021 in R 3.4.2: 
+source("http://bioconductor.org/biocLite.R")
+biocLite(c("graph", "RBGL", "gtools", "xtable"))
+install.packages("Vennerable", repos="http://R-Forge.R-project.org")
+
+pdf("Venn2021_ATAC_dREG.pdf")
+Vcombo <- Venn(SetNames = c("LZ", "P", "D"),
+Weight = c(0, 3059, 3779, 10319,
+    2157, 5316, 8152, 18633))
+    
+    plot(Vcombo, doWeights = TRUE)
+    dev.off()
+    
+    
+    
