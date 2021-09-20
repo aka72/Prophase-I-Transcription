@@ -1,0 +1,86 @@
+Directory: /local/storage/projects/prophaseI/data/atacseq_genrich/DESeq2
+Date: 08/13/21
+
+library("DESeq2")
+setwd("/local/storage/projects/prophaseI/data/atacseq_genrich/DESeq2")
+
+counts <- as.data.frame(read.csv("All.ATAC.genrich.counts",sep="\t"), header=FALSE)
+colnames(counts) <- c("contig","begin","end","LZR1", "LZR2", "PR1", "PR2","DR1", "DR2")
+
+attach(counts)
+names(counts)
+counts$peak <- paste(counts$contig,":",counts$begin,"-",counts$end,sep="")
+
+rownames(counts) <- counts$peak
+counts$contig<-NULL 
+counts$end<-NULL
+counts$begin<-NULL
+counts$peak<-NULL
+counts$contig<-NULL
+
+cols <- read.table("ATAC_columns.txt",row.names=1, header=FALSE)
+colnames(cols) <- c('stage')
+
+dds <- DESeqDataSetFromMatrix(countData = counts,colData = cols,
+                              design = ~ stage)
+dds <- dds[ rowSums(counts(dds)) > 1, ]
+
+#did not use this time around; Ask Charles, Lina used normBW; is there anyway to use fastq 
+stats to normalize library size in DEseq2: sizeFactors(dds) <- rep(sampleSize, 3)
+
+ddstest <- DESeq(dds, fitType = "local")
+sizeFactors(ddstest)
+#     LZR1      LZR2       PR1       PR2       DR1       DR2 
+#0.4231876 0.8128176 1.6156427 2.8478223 1.0541206 0.6640881
+
+res <- results(ddstest)
+resOrdered <- res[order(res$padj),]
+sum(res$padj < 0.05, na.rm=TRUE) #12839
+res05 <- subset(resOrdered, padj < 0.05)
+
+resP_LZ<-results(ddstest, contrast=c("stage","Pachynema","Leptonema/Zygonema"))
+resP_LZOrdered_05<-subset(resP_LZ[order(resP_LZ$padj),], padj < 0.05)
+sum(resP_LZ$padj < 0.05, na.rm=TRUE) #20012
+
+summary(resP_LZOrdered_05)
+#out of 20012 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 8258, 41%
+LFC < 0 (down)     : 11754, 59%
+outliers [1]       : 0, 0%
+low counts [2]     : 0, 0%
+(mean count < 4)
+
+#From James:toppeaks5_pp<-resP_LZOrdered_05[1:15000,]
+
+resP_LZOrdered_05_l2fc<-subset(resP_LZOrdered_05[order(resP_LZOrdered_05$log2FoldChange),])
+save(resP_LZOrdered_05_l2fc, file ="./resP_LZOrdered_05_l2fc.RData")
+
+
+write.csv(as.data.frame(resP_LZOrdered_05_l2fc),file="DeSEQ2_ATAC_P_LZ.bed")
+
+
+pdf("MA_ATAC_P_LZ.pdf")
+plotMA(resP_LZ, colNonSig = "gray67", colSig = "dark red")
+dev.off()
+
+resD_P<-results(ddstest, contrast=c("stage","Diplonema","Pachynema"))
+resD_POrdered_05<-subset(resD_P[order(resD_P$padj),], padj < 0.05)
+sum(resD_P$padj < 0.05, na.rm=TRUE) #3091
+
+summary(resD_POrdered_05)
+out of 12839 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 5585, 44%
+LFC < 0 (down)     : 7254, 56%
+outliers [1]       : 0, 0%
+low counts [2]     : 0, 0%
+(mean count < 4))
+#From James: toppeaks5_pp<-resHW5_ppOrdered_05[1:15000,]
+
+resD_POrdered_05_l2fc<-subset(resD_POrdered_05[order(resD_POrdered_05$log2FoldChange),])
+write.csv(as.data.frame(resD_POrdered_05_l2fc),file="DeSEQ2_ATAC_D_P.bed")
+
+pdf("MA_ATAC_D_P.pdf")
+plotMA(resD_P, colNonSig = "gray67", colSig = "dark red")
+dev.off()
