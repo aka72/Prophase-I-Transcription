@@ -1,0 +1,127 @@
+Directory: /local/storage/projects/prophaseI/Limmaradnormalized
+Date: 08/31/21
+Source: https://bernatgel.github.io/karyoploter_tutorial//Examples/GeneExpression/GeneExpression.html
+
+#####################################################################################
+#####Create a GRanges Object to Get Genomic Position of Genes and Gene Names from DESeq2 Output#####
+#####################################################################################
+
+
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(org.Mm.eg.db)
+
+###LZ to P###
+# Get gene ranges
+geneRanges <- genes(TxDb.Mmusculus.UCSC.mm10.knownGene)
+
+# Annotate gene ranges with symbol
+geneRanges$symbol <- mapIds(org.Mm.eg.db,
+                            keys = geneRanges$gene_id,
+                            column = "SYMBOL",
+                            keytype = "ENTREZID",
+                            multiVals = "first")
+
+names(geneRanges) <- geneRanges$symbol
+
+###P to D###
+# Get gene ranges
+geneRanges2 <- genes(TxDb.Mmusculus.UCSC.mm10.knownGene)
+
+# Annotate gene ranges with symbol
+geneRanges2$symbol <- mapIds(org.Mm.eg.db,
+                            keys = geneRanges2$gene_id,
+                            column = "SYMBOL",
+                            keytype = "ENTREZID",
+                            multiVals = "first")
+
+names(geneRanges2) <- geneRanges2$symbol
+
+#####################################################################################
+#####Get DESeq2 Results for "Gene Body"#####
+#####################################################################################
+library(DESeq2)
+load(file = "./DESeq2.RData")
+body.P.LZ <- results(dds, contrast=c("condition", "body_P", "body_LZ"))
+body.D.P <- results(dds, contrast=c("condition", "body_D", "body_P"))
+
+#####################################################################################
+#####Adding Genomic Position to DESeq2 results#####
+#####################################################################################
+
+mcols(geneRanges) <- body.P.LZ[names(geneRanges), c("log2FoldChange", "stat", "pvalue", "padj")]
+head(geneRanges, n=4)
+
+mcols(geneRanges2) <- body.D.P[names(geneRanges2), c("log2FoldChange", "stat", "pvalue", "padj")]
+head(geneRanges, n=4)
+
+#####################################################################################
+#####Make KaryoploteR#####
+#####################################################################################
+
+###LZ to P###
+
+
+ordered <- geneRanges[order(geneRanges$padj, na.last = TRUE),]
+filtered.geneRanges <- geneRanges[!is.na(geneRanges$padj)]
+log.pval <- -log10(filtered.geneRanges$padj)
+mcols(filtered.geneRanges)$log.pval <- log.pval
+filtered.geneRanges
+sign.genes <- filtered.geneRanges[filtered.geneRanges$padj < 0.05,]
+range(sign.genes$log2FoldChange)
+#0.519899 6.488807
+
+fc.ymax <- 7
+fc.ymin <- 0
+cex.val <- sqrt(sign.genes$log.pval)/4
+top.genes <- ordered[1:100]
+points.top <- 0.7
+col.over <- "#9E1617"
+col.under <- "#006A9C"
+sign.col <- rep(col.over, length(sign.genes))
+sign.col[sign.genes$log2FoldChange<0] <- col.under
+
+library(karyoploteR)
+pdf("LZPkp.pdf")
+{kp <- plotKaryotype(genome="mm10", chromosomes=c("chr5", "chr14", "chr15", "chrX", "chrY"),plot.type=2)
+kpPoints(kp, data=sign.genes, y=sign.genes$log2FoldChange, cex=cex.val, ymax=fc.ymax, ymin=fc.ymin, r1=points.top, col=sign.col)
+kpAxis(kp, ymax=fc.ymax, ymin=fc.ymin, r1=points.top)
+kpAddLabels(kp, labels = "log2 FC", srt=90, pos=1, label.margin = 0.04, ymax=fc.ymax, ymin=fc.ymin, r1=points.top)
+gene.mean <- start(top.genes) + (end(top.genes) - start(top.genes))/2
+kpSegments(kp, chr=as.character(seqnames(top.genes)), x0=gene.mean, x1=gene.mean, y0=top.genes$log2FoldChange, y1=fc.ymax, ymax=fc.ymax, ymin=fc.ymin, r1=points.top)
+kpPlotMarkers(kp, top.genes, labels = names(top.genes), text.orientation = "horizontal", r0=points.top)
+kp <- kpPlotDensity(kp, data=geneRanges, window.size = 10e4, data.panel = 2)}
+legend(x = "bottomright", fill = c("#9E1617"), legend = c("filtered.geneRanges$log.pval"))
+dev.off()
+
+###P to D###
+
+
+ordered <- geneRanges2[order(geneRanges2$padj, na.last = TRUE),]
+filtered.geneRanges2 <- geneRanges2[!is.na(geneRanges2$padj)]
+log.pval <- -log10(filtered.geneRanges2$padj)
+mcols(filtered.geneRanges2)$log.pval <- log.pval
+filtered.geneRanges2
+sign.genes <- filtered.geneRanges2[filtered.geneRanges2$padj < 0.05,]
+range(sign.genes$log2FoldChange)
+#-3.2111008 -0.5857939
+
+fc.ymax <- 0
+fc.ymin <- -4
+cex.val <- sqrt(sign.genes$log.pval)/4
+top.genes <- ordered[1:100]
+points.top <- 0.7
+col.over <- "#9E1617"
+col.under <- "#006A9C"
+sign.col <- rep(col.over, length(sign.genes))
+sign.col[sign.genes$log2FoldChange<0] <- col.under
+
+pdf("PDkp.pdf")
+{kp <- plotKaryotype(genome="mm10", chromosomes=c("chr5", "chr14", "chr15", "chrX", "chrY"),plot.type=2)
+kpPoints(kp, data=sign.genes, y=sign.genes$log2FoldChange, cex=cex.val, ymax=fc.ymax, ymin=fc.ymin, r1=points.top, col=sign.col)
+kpAxis(kp, ymax=fc.ymax, ymin=fc.ymin, r1=points.top)
+kpAddLabels(kp, labels = "log2 FC", srt=90, pos=1, label.margin = 0.04, ymax=fc.ymax, ymin=fc.ymin, r1=points.top)
+gene.mean <- start(top.genes) + (end(top.genes) - start(top.genes))/2
+kpSegments(kp, chr=as.character(seqnames(top.genes)), x0=gene.mean, x1=gene.mean, y0=top.genes$log2FoldChange, y1=fc.ymax, ymax=fc.ymax, ymin=fc.ymin, r1=points.top)
+kpPlotMarkers(kp, top.genes, labels = names(top.genes), text.orientation = "horizontal", r0=points.top)
+kp <- kpPlotDensity(kp, data=geneRanges2, window.size = 10e4, data.panel = 2)}
+dev.off()
