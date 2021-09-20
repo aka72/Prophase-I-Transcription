@@ -1,0 +1,73 @@
+Directory: /local/storage/projects/prophaseI/Limmaradnormalized
+Date: 09/02/21
+Source: https://bernatgel.github.io/karyoploter_tutorial//Tutorial/PlotManhattan/PlotManhattan.html
+
+#####################################################################################
+#####Create a GRanges Object to Get Genomic Position of Genes and Gene Names from DESeq2 Output#####
+#####################################################################################
+
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(org.Mm.eg.db)
+
+
+# Get gene ranges
+geneRanges <- genes(TxDb.Mmusculus.UCSC.mm10.knownGene)
+
+# Annotate gene ranges with symbol
+geneRanges$symbol <- mapIds(org.Mm.eg.db,
+                            keys = geneRanges$gene_id,
+                            column = "SYMBOL",
+                            keytype = "ENTREZID",
+                            multiVals = "first")
+
+names(geneRanges) <- geneRanges$symbol
+
+#####################################################################################
+#####Get DESeq2 Results for "Gene Body"#####
+#####################################################################################
+library(DESeq2)
+load(file = "./counts.normalized.RData")
+
+counts.normalizedP <- as.data.frame(counts.normalized[,21:24])
+counts.normalizedPaverage <- as.data.frame(rowMeans(counts.normalizedP, na.rm=TRUE))
+colnames(counts.normalizedPaverage) <- "pval"
+counts.normalizedPaverage <- cbind(counts.normalizedPaverage, 2)
+
+#####################################################################################
+#####Adding FPKM to DESeq2 results#####
+#####################################################################################
+
+mcols(geneRanges)<- counts.normalizedPaverage[names(geneRanges), c("pval", "2")]
+head(geneRanges, n=4)
+
+library(karyoploteR)
+ordered <- geneRanges[order(geneRanges$pval, na.last = TRUE),]
+filtered.geneRanges <- geneRanges[!is.na(geneRanges$pval)]
+filtered.geneRanges$pval[filtered.geneRanges$pval==0] <- NA
+
+filtered.geneRanges <- filtered.geneRanges[!is.na(filtered.geneRanges$pval)]
+range(filtered.geneRanges$pval)
+n <- length(filtered.geneRanges$pval)
+sort(filtered.geneRanges$pval,partial=n-1)[n-1]
+
+pdf("manhattanplot.pdf")
+transf.pval <- -log10(filtered.geneRanges$pval)
+points.col <- colByValue(transf.pval, colors=c("#e3e9f3","#61b6cc", "#577f3f"))
+kp <- plotKaryotype(genome="mm10", plot.type=4)
+kp <- kpPlotManhattan(kp, data=filtered.geneRanges, points.col = points.col, ymin=2.3, ymax=8, r1=0.8)
+kpAxis(kp, ymin = 2.3, ymax=8)
+kpPlotDensity(kp, data=filtered.geneRanges, col="#61b6cc", r0=0.82, window.size = 10e6)
+
+dev.off()
+
+##New one
+pdf("manhattanplot.pdf")
+
+kp <- plotKaryotype(genome="mm10",plot.type=4)
+kp <- kpPlotManhattan(kp, data=filtered.geneRanges, points.col = c("#31688E", "#26828E"), ymin=1.9e-08, ymax=0.00262, r1=0.8, logp=FALSE)
+kpAxis(kp, ymin = 1.9e-08, ymax=0.00262)
+kpPlotDensity(kp, data=filtered.geneRanges, col="#31688E", r0=0.82, window.size = 10e6)
+
+dev.off()
+
+chromosomes=c("chr1", "chr3","chr5","chr7", "chr13", "chr14", "chr15", "chr17", "chrX", "chrY")
