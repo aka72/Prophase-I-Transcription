@@ -1,0 +1,60 @@
+##Use Genrich to call peaks on ATAC-seq bam files
+#Directory: /local/storage/projects/prophaseI/data/atacseq_genrich
+
+
+#Samtools sort by query name 
+samtools sort -n *filename* -o *output name*
+
+samtools sort -n LZR2.filtered.sorted.nd.bam -o LZR2.filtered.sorted2.nd.bam
+samtools sort -n PR1.filtered.sorted.nd.bam -o PR1.filtered.sorted2.nd.bam
+samtools sort -n PR2.filtered.sorted.nd.bam -o PR2.filtered.sorted2.nd.bam
+samtools sort -n DR1.filtered.sorted.nd.bam -o DR1.filtered.sorted2.nd.bam
+samtools sort -n DR2.filtered.sorted.nd.bam -o DR2.filtered.sorted2.nd.bam
+
+
+
+###Script with all stages and replicates
+
+/home/aka72/miniconda3/pkgs/genrich-0.6.1-h5bf99c6_1/bin/Genrich -t ./LZR1.filtered.sorted2.nd.bam,./LZR2.filtered.sorted2.nd.bam,./PR1.filtered.sorted2.nd.bam,./PR2.filtered.sorted2.nd.bam,./DR1.filtered.sorted2.nd.bam,./DR2.filtered.sorted2.nd.bam -o ./all.narrowPeak  \
+ -j -f all.log -q 0.05 -a 20.0 -v -e chrM -y 
+ 
+ 
+ 
+ Peak-calling parameters:
+  Genome length: 2730855475bp
+  Significance threshold: -log(q) > 1.301
+  Min. AUC: 20.000
+  Max. gap between sites: 100bp
+Peaks identified: 311959 (179157591bp)
+  
+###Script for replicates per stage
+
+/home/aka72/miniconda3/pkgs/genrich-0.6.1-h5bf99c6_1/bin/Genrich -t ./LZR1.filtered.sorted2.nd.bam,./LZR2.filtered.sorted2.nd.bam -o ./LZ.narrowPeak  \
+ -j -f all.log -q 0.05 -a 20.0 -v -e chrM -y 
+ 
+ Peak-calling parameters:
+  Genome length: 2730855475bp
+  Significance threshold: -log(q) > 1.301
+  Min. AUC: 20.000
+  Max. gap between sites: 100bp
+Peaks identified: 54664 (33189927bp)
+
+/home/aka72/miniconda3/pkgs/genrich-0.6.1-h5bf99c6_1/bin/Genrich -t ./PR1.filtered.sorted2.nd.bam,./PR2.filtered.sorted2.nd.bam -o ./P.narrowPeak  \
+ -j -f all.log -q 0.05 -a 20.0 -v -e chrM -y 
+ 
+ Peak-calling parameters:
+  Genome length: 2730855475bp
+  Significance threshold: -log(q) > 1.301
+  Min. AUC: 20.000
+  Max. gap between sites: 100bp
+Peaks identified: 58393 (39755837bp)
+ 
+ /home/aka72/miniconda3/pkgs/genrich-0.6.1-h5bf99c6_1/bin/Genrich -t ./DR1.filtered.sorted2.nd.bam,./DR2.filtered.sorted2.nd.bam -o ./D.narrowPeak  \
+ -j -f all.log -q 0.05 -a 20.0 -v -e chrM -y 
+
+Peak-calling parameters:
+  Genome length: 2730855475bp
+  Significance threshold: -log(q) > 1.301
+  Min. AUC: 20.000
+  Max. gap between sites: 100bp
+Peaks identified: 78632 (45456485bp)
