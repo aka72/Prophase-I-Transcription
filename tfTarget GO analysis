@@ -1,0 +1,196 @@
+Directory: /local/storage/projects/prophaseI/dREG_deseq2/tfTarget/tf_GOanalysis
+Date: 09/07/21
+
+#####################################################################################
+#####Extract genes for each motif name#####
+#####################################################################################
+Motif IDs: Meis3, Klf9, Mecom, Myb, Mybl1, Mybl2
+
+###Meis3###
+grep "Meis3" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Meis3.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Meis3.txt > Meis3genes.txt
+
+###Klf9###
+grep "Klf9" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Klf9.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Klf9.txt > Klf9genes.txt
+
+###Mecom###
+grep "Mecom" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Mecom.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Mecom.txt > Mecomgenes.txt
+
+###Myb###
+grep "Myb" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Myb.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Myb.txt > Mybgenes.txt
+
+###Mybl1###
+grep "Mybl1" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Mybl1.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Mybl1.txt > Mybl1genes.txt
+
+###Mybl2###
+grep "Mybl2" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Mybl2.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Mybl2.txt > Mybl2genes.txt
+
+###Gata1###
+grep "Gata1" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Gata1.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Gata1.txt > Gata1genes.txt
+
+###Nr5a2###
+grep "Nr5a2" LZP_dist_1000000_closest.N_off_gene.pval_0.1.TF.TRE.gene.txt > Nr5a2.txt
+awk 'BEGIN{OFS="\t"};{print $20}' Nr5a2.txt > Nr5a2genes.txt
+
+#####################################################################################
+#####Cluster profiler#####
+#####################################################################################
+
+##go enrichment####
+library(clusterProfiler)
+library(org.Mm.eg.db)
+keytypes(org.Mm.eg.db)
+library(ggplot2)
+library(enrichplot)
+library(magrittr)
+library(dplyr)
+library(devtools)
+library(ggnewscale)
+
+###Meis3###
+Meis3 <- read.table(file = 'Meis3genes.txt')
+Meis3 <- Meis3[,1]
+
+ENTREZID.Meis3 <- AnnotationDbi::select(org.Mm.eg.db, keys=Meis3, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Meis3 <- ENTREZID.Meis3 %>% distinct(SYMBOL, .keep_all = TRUE)	##709 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Meis3, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Meis3.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
+
+#####################################################################################
+
+###Klf9###
+Klf9 <- read.table(file = 'Klf9genes.txt')
+Klf9 <- Klf9[,1]
+
+ENTREZID.Klf9 <- AnnotationDbi::select(org.Mm.eg.db, keys=Klf9, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Klf9 <- ENTREZID.Klf9 %>% distinct(SYMBOL, .keep_all = TRUE)	##600 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Klf9, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Klf9.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
+
+#####################################################################################
+
+###Mecom###
+Mecom <- read.table(file = 'Mecomgenes.txt')
+Mecom <- Mecom[,1]
+
+ENTREZID.Mecom <- AnnotationDbi::select(org.Mm.eg.db, keys=Mecom, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Mecom <- ENTREZID.Mecom %>% distinct(SYMBOL, .keep_all = TRUE)	##354 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Mecom, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Mecom.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
+
+#####################################################################################
+
+###Myb###
+Myb <- read.table(file = 'Mybgenes.txt')
+Myb <- Myb[,1]
+
+ENTREZID.Myb <- AnnotationDbi::select(org.Mm.eg.db, keys=Myb, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Myb <- ENTREZID.Myb %>% distinct(SYMBOL, .keep_all = TRUE)	##2145 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Myb, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Myb.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
+
+#####################################################################################
+
+###Mybl1###
+Mybl1 <- read.table(file = 'Mybl1genes.txt')
+Mybl1 <- Mybl1[,1]
+
+ENTREZID.Mybl1 <- AnnotationDbi::select(org.Mm.eg.db, keys=Mybl1, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Mybl1 <- ENTREZID.Mybl1 %>% distinct(SYMBOL, .keep_all = TRUE)	##1200 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Mybl1, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Mybl1.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
+
+#####################################################################################
+
+###Mybl2###
+Mybl2<- read.table(file = 'Mybl2genes.txt')
+Mybl2 <- Mybl2[,1]
+
+ENTREZID.Mybl2 <- AnnotationDbi::select(org.Mm.eg.db, keys=Mybl2, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Mybl2 <- ENTREZID.Mybl2 %>% distinct(SYMBOL, .keep_all = TRUE)	##996 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Mybl2, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Mybl2.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
+
+#####################################################################################
+
+###Gata1###
+Gata1<- read.table(file = 'Gata1genes.txt')
+Gata1 <- Gata1[,1]
+
+ENTREZID.Gata1 <- AnnotationDbi::select(org.Mm.eg.db, keys=Gata1, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Gata1 <- ENTREZID.Gata1 %>% distinct(SYMBOL, .keep_all = TRUE)	##1068 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Gata1, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Gata1.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
+
+#####################################################################################
+
+###Nr5a2###
+Nr5a2<- read.table(file = 'Nr5a2genes.txt')
+Nr5a2 <- Nr5a2[,1]
+
+ENTREZID.Nr5a2 <- AnnotationDbi::select(org.Mm.eg.db, keys=Nr5a2, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+
+ENTREZID.Nr5a2 <- ENTREZID.Nr5a2 %>% distinct(SYMBOL, .keep_all = TRUE)	##1651 genes												   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.Nr5a2, fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP", pvalueCutoff=0.05, pAdjustMethod='BH', readable=TRUE)
+
+
+pdf("cnetplot_Nr5a2.pdf")
+cnetplot(cc.go, categorySize= "geneNum", circular = FALSE, layout = "kk", colorEdge = geom_edge(), node_label="all", cex_label_category= 0.9, cex_label_gene=0.9,
+		shadowtext = "all") + scale_color_viridis(discrete = TRUE, option = "E")
+dev.off()
